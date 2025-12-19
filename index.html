@@ -14,14 +14,13 @@
       const cognitoDomain = "eu-west-1jh5bgov66.auth.eu-west-1.amazoncognito.com";
       const clientId = "3llork2t46v9n0u21n35sgknh4";
       const redirectUri =
-        "https://matthewboyd.github.io/pr-ai-log/post-auth.html";
-
+        "https://d84l1y8p4kdic.cloudfront.net";
       document.getElementById("login-btn").addEventListener("click", () => {
         const url =
           `https://${cognitoDomain}/login` +
           `?client_id=${encodeURIComponent(clientId)}` +
           `&response_type=token` +
-          `&scope=${encodeURIComponent("openid email profile")}` +
+          `&scope=${encodeURIComponent("email openid phone")}` +
           `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
         window.location = url;
