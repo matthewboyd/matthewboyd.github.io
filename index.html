@@ -22,7 +22,7 @@ const loginUrl =
   `&scope=${encodeURIComponent("email openid phone")}` +
   `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-        window.location = url;
+        window.location = loginUrl;
       });
     </script>
   </body>
