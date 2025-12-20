@@ -17,7 +17,7 @@
       const loginUrl =
         `https://${cognitoDomain}/login` +
         `?client_id=${clientId}` +
-        `&response_type=code` +
+        `&response_type=token` +
         `&scope=email+openid+phone` + // note: hard-coded with +
         `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
