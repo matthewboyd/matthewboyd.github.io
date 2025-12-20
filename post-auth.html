@@ -6,14 +6,25 @@
   </head>
   <body>
     <h1>Your PR Logger Account</h1>
+
     <div id="status"></div>
-    <button id="create-api-key-btn" style="display:none;">Generate API Key</button>
-    <pre id="api-key-display"></pre>
+
+    <button id="subscribe-btn" style="margin-top: 16px; display: none;">
+      Start £5/month subscription
+    </button>
+
+    <button id="create-api-key-btn" style="margin-top: 16px; display:none;">
+      Generate API Key
+    </button>
+
+    <pre id="api-key-display" style="margin-top: 16px;"></pre>
+    <pre id="debug" style="margin-top: 16px; font-size: 12px; opacity: 0.8;"></pre>
 
     <script>
-      const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod"; // API Gateway URL
+      const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod"; // API Gateway base
 
       function parseHash() {
+        // Cognito sends tokens in the URL hash for response_type=token
         const h = window.location.hash.substring(1);
         const params = new URLSearchParams(h);
         return {
@@ -23,11 +34,13 @@
       }
 
       const { idToken } = parseHash();
+      console.log("idToken from hash:", idToken);
+
       if (!idToken) {
         document.getElementById("status").textContent =
-          "No token found. Please sign in again.";
+          "No token found in URL. Make sure response_type=token and redirect_uri points to post-auth.html.";
       } else {
-        // store for later use
+        // store for later use (for /apikey and /billing)
         window.localStorage.setItem("idToken", idToken);
 
         // call backend to init user + check subscription
@@ -36,28 +49,31 @@
 
       async function initUser(token) {
         document.getElementById("status").textContent = "Loading account...";
+
         const res = await fetch(`${apiBase}/user/init`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({})
         });
 
         const data = await res.json();
+        document.getElementById("debug").textContent =
+          "user/init response:\n" + JSON.stringify(data, null, 2);
+
         if (!res.ok) {
           document.getElementById("status").textContent =
-            "Error: " + (data.error || res.status);
+            "Error from /user/init: " + (data.error || res.status);
           return;
         }
 
         // data: { user_id, subscription_status, has_api_key }
         if (data.subscription_status !== "active") {
           document.getElementById("status").textContent =
-            "Subscription inactive. Click here to start your £5/mo subscription.";
-          // Show a link/button to call /billing/create-checkout-session
-          // and redirect to Stripe Checkout
+            "Subscription inactive. Click below to start your £5/mo subscription.";
+          document.getElementById("subscribe-btn").style.display = "inline-block";
         } else {
           document.getElementById("status").textContent =
             "Subscription active.";
@@ -65,23 +81,58 @@
         }
       }
 
+      // Subscribe button → Stripe Checkout
+      document.getElementById("subscribe-btn").addEventListener("click", async () => {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found. Please log in again.");
+          return;
+        }
+
+        const res = await fetch(`${apiBase}/billing/create-checkout-session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({})
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          alert("Error creating checkout session: " + (data.error || res.status));
+          return;
+        }
+
+        // Redirect to Stripe Checkout
+        window.location = data.checkout_url;
+      });
+
+      // Generate API key button
       document
         .getElementById("create-api-key-btn")
         .addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found. Please log in again.");
+            return;
+          }
+
           const res = await fetch(`${apiBase}/apikey`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
+              "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({})
           });
+
           const data = await res.json();
           if (!res.ok) {
             alert("Error generating API key: " + (data.error || res.status));
             return;
           }
+
           document.getElementById("api-key-display").textContent =
             "API Key (paste into extension):\n" + data.api_key;
         });
