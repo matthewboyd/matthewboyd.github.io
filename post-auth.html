@@ -22,10 +22,43 @@
     </button>
 
     <pre id="api-key-display" style="margin-top: 16px;"></pre>
+
+    <hr style="margin: 24px 0;" />
+
+    <!-- Entries section -->
+    <div id="entries-section" style="display: none;">
+      <h2>Your PR entries (this year)</h2>
+      <button id="show-entries-btn" style="margin-top: 8px;">
+        Load entries
+      </button>
+      <div id="entries-controls" style="margin-top: 8px; display: none;">
+        <button id="next-page-btn">Next 20</button>
+      </div>
+      <ul id="entries-list" style="margin-top: 12px;"></ul>
+    </div>
+
+    <hr style="margin: 24px 0;" />
+
+    <!-- Performance review section -->
+    <div id="review-section" style="display: none;">
+      <h2>Performance review</h2>
+      <p>
+        This will summarise all your PR entries for this year against your
+        levels &amp; expectations spec.
+      </p>
+      <button id="generate-review-btn" style="margin-top: 8px;">
+        Generate performance review
+      </button>
+      <pre id="review-output" style="margin-top: 16px; white-space: pre-wrap;"></pre>
+    </div>
+
     <pre id="debug" style="margin-top: 16px; font-size: 12px; opacity: 0.8;"></pre>
 
     <script>
       const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
+
+      // pagination cursor for entries
+      let entriesNextCursor = null;
 
       function parseHash() {
         const raw = window.location.hash.startsWith("#")
@@ -47,6 +80,16 @@
         const apiKeyBtn = document.getElementById("create-api-key-btn");
         const revokeBtn = document.getElementById("revoke-api-key-btn");
         const apiKeyDisplay = document.getElementById("api-key-display");
+
+        const entriesSection = document.getElementById("entries-section");
+        const showEntriesBtn = document.getElementById("show-entries-btn");
+        const entriesControls = document.getElementById("entries-controls");
+        const nextPageBtn = document.getElementById("next-page-btn");
+        const entriesList = document.getElementById("entries-list");
+
+        const reviewSection = document.getElementById("review-section");
+        const generateReviewBtn = document.getElementById("generate-review-btn");
+        const reviewOutput = document.getElementById("review-output");
 
         const { idToken, billing } = parseHash();
         const storedToken = window.localStorage.getItem("idToken");
@@ -180,6 +223,116 @@
           apiKeyBtn.textContent = "Generate API Key";
           revokeBtn.style.display = "none";
         });
+
+        // Load first page of entries
+        showEntriesBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+          entriesNextCursor = null;
+          entriesList.innerHTML = "";
+          await loadEntriesPage(token, false);
+        });
+
+        // Load next page
+        nextPageBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+          await loadEntriesPage(token, true);
+        });
+
+        // Generate performance review
+        generateReviewBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          reviewOutput.textContent = "Generating performance review...";
+          const year = new Date().getFullYear();
+
+          const res = await fetch(`${apiBase}/performance-review`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ year }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/performance-review response:", data);
+
+          if (!res.ok) {
+            reviewOutput.textContent =
+              "Error generating review: " + (data.error || res.status);
+            return;
+          }
+
+          reviewOutput.textContent = data.review_text || "(No review text returned)";
+        });
+
+        async function loadEntriesPage(token, isNext) {
+          const year = new Date().getFullYear();
+
+          const url = new URL(`${apiBase}/entries`);
+          url.searchParams.set("year", String(year));
+          url.searchParams.set("limit", "20");
+          if (isNext && entriesNextCursor) {
+            url.searchParams.set("cursor", entriesNextCursor);
+          }
+
+          const res = await fetch(url.toString(), {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/entries response:", data);
+
+          if (!res.ok) {
+            alert("Error loading entries: " + (data.error || res.status));
+            return;
+          }
+
+          // Append entries
+          (data.items || []).forEach((item) => {
+            const li = document.createElement("li");
+            const date = item.date || "";
+            const repo = item.repo || "";
+            const pr = item.pr_number || "";
+            const summary = item.summary || "";
+            const url = item.url || "#";
+
+            li.textContent = `[${date}] ${repo} #${pr} – ${summary}`;
+            li.style.marginBottom = "6px";
+
+            li.addEventListener("click", () => {
+              if (url && url !== "#") {
+                window.open(url, "_blank");
+              }
+            });
+
+            entriesList.appendChild(li);
+          });
+
+          entriesControls.style.display = (data.has_more ? "block" : "none");
+          entriesNextCursor = data.next_cursor || null;
+        }
+
+        // Expose sections only when subscription is active (set in initUser)
+        window._showAdvancedSections = function () {
+          entriesSection.style.display = "block";
+          reviewSection.style.display = "block";
+        };
       });
 
       async function initUser(token) {
@@ -234,6 +387,11 @@
             apiKeyBtn.textContent = "Generate API Key";
             revokeBtn.style.display = "none";
             apiKeyDisplay.textContent = "";
+          }
+
+          // show entries + review sections once user is active
+          if (window._showAdvancedSections) {
+            window._showAdvancedSections();
           }
         }
       }
