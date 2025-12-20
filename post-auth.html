@@ -306,7 +306,7 @@
 
           const items = data.items || [];
 
-          // Append items, grouped by month with edit button
+          // Append items, grouped by month with hyperlink + edit button
           items.forEach((item) => {
             const { monthKey, displayDate } = computeMonthAndDate(item);
 
@@ -333,25 +333,28 @@
             li.style.marginBottom = "6px";
             li.style.gap = "8px";
 
-            const textSpan = document.createElement("span");
-            textSpan.style.flex = "1 1 auto";
-            textSpan.style.cursor = prUrl && prUrl !== "#" ? "pointer" : "default";
-            textSpan.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
-
-            // click entry to open PR in new tab
-            textSpan.addEventListener("click", () => {
-              if (prUrl && prUrl !== "#") {
-                window.open(prUrl, "_blank");
-              }
-            });
+            // clickable hyperlink for the entry
+            const link = document.createElement("a");
+            link.style.flex = "1 1 auto";
+            link.href = prUrl && prUrl !== "#" ? prUrl : "#";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+            if (!prUrl || prUrl === "#") {
+              link.style.pointerEvents = "none";
+              link.style.textDecoration = "none";
+              link.style.color = "inherit";
+            }
 
             const editBtn = document.createElement("button");
             editBtn.textContent = "Edit";
             editBtn.style.fontSize = "12px";
             editBtn.style.padding = "2px 6px";
+            editBtn.style.cursor = "pointer";
 
             editBtn.addEventListener("click", async (e) => {
               e.stopPropagation();
+              e.preventDefault(); // don’t trigger the link
 
               const current = summary;
               const updated = prompt("Edit your summary:", current);
@@ -387,10 +390,10 @@
 
               // Update UI
               summary = trimmed;
-              textSpan.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+              link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
             });
 
-            li.appendChild(textSpan);
+            li.appendChild(link);
             li.appendChild(editBtn);
             entriesList.appendChild(li);
           });
