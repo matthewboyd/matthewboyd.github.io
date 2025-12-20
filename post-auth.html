@@ -1,141 +1,83 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Your Account</title>
-  </head>
-  <body>
-    <h1>Your PR Logger Account</h1>
+<script>
+  const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
 
-    <div id="status"></div>
+  function parseHash() {
+    const h = window.location.hash.startsWith("#")
+      ? window.location.hash.substring(1)
+      : window.location.hash;
+    const params = new URLSearchParams(h);
+    return {
+      idToken: params.get("id_token"),
+      accessToken: params.get("access_token"),
+      billing: params.get("billing"), // success | cancel | null
+    };
+  }
 
-    <button id="subscribe-btn" style="margin-top: 16px; display: none;">
-      Start £5/month subscription
-    </button>
+  const { idToken, billing } = parseHash();
 
-    <button id="create-api-key-btn" style="margin-top: 16px; display:none;">
-      Generate API Key
-    </button>
+  let tokenToUse = idToken;
 
-    <pre id="api-key-display" style="margin-top: 16px;"></pre>
-    <pre id="debug" style="margin-top: 16px; font-size: 12px; opacity: 0.8;"></pre>
+  // If we got a fresh token from Cognito, store it
+  if (idToken) {
+    window.localStorage.setItem("idToken", idToken);
+  } else {
+    // No token in URL (e.g. after Stripe redirect) – try stored token
+    const stored = window.localStorage.getItem("idToken");
+    if (stored) {
+      tokenToUse = stored;
+    }
+  }
 
-    <script>
-      const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod"; // API Gateway base
+  // Optional: show billing result somewhere
+  if (billing === "success") {
+    document.getElementById("status").textContent =
+      "Payment complete – checking subscription status…";
+  } else if (billing === "cancel") {
+    document.getElementById("status").textContent =
+      "Payment cancelled. You can retry subscription below.";
+  }
 
-      function parseHash() {
-        // Cognito sends tokens in the URL hash for response_type=token
-        const h = window.location.hash.substring(1);
-        const params = new URLSearchParams(h);
-        return {
-          idToken: params.get("id_token"),
-          accessToken: params.get("access_token")
-        };
-      }
+  if (!tokenToUse) {
+    // Really no token anywhere – user needs to log in again
+    document.getElementById("status").textContent =
+      "No token found. Please sign in again.";
+  } else {
+    initUser(tokenToUse);
+  }
 
-      const { idToken } = parseHash();
-      console.log("idToken from hash:", idToken);
+  async function initUser(token) {
+    document.getElementById("status").textContent = "Loading account...";
 
-      if (!idToken) {
-        document.getElementById("status").textContent =
-          "No token found in URL. Make sure response_type=token and redirect_uri points to post-auth.html.";
-      } else {
-        // store for later use (for /apikey and /billing)
-        window.localStorage.setItem("idToken", idToken);
+    const res = await fetch(`${apiBase}/user/init`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({})
+    });
 
-        // call backend to init user + check subscription
-        initUser(idToken);
-      }
+    const data = await res.json().catch(() => ({}));
 
-      async function initUser(token) {
-        document.getElementById("status").textContent = "Loading account...";
+    if (!res.ok) {
+      console.error("user/init error", data);
+      document.getElementById("status").textContent =
+        "Error: " + (data.error || res.status);
+      return;
+    }
 
-        const res = await fetch(`${apiBase}/user/init`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({})
-        });
+    if (data.subscription_status !== "active") {
+      document.getElementById("status").textContent =
+        "Subscription inactive. Click below to start your £5/mo subscription.";
+      document.getElementById("subscribe-btn").style.display = "inline-block";
+      document.getElementById("create-api-key-btn").style.display = "none";
+    } else {
+      document.getElementById("status").textContent = "Subscription active.";
+      document.getElementById("subscribe-btn").style.display = "none";
+      document.getElementById("create-api-key-btn").style.display = "inline-block";
+    }
+  }
 
-        const data = await res.json();
-        document.getElementById("debug").textContent =
-          "user/init response:\n" + JSON.stringify(data, null, 2);
-
-        if (!res.ok) {
-          document.getElementById("status").textContent =
-            "Error from /user/init: " + (data.error || res.status);
-          return;
-        }
-
-        // data: { user_id, subscription_status, has_api_key }
-        if (data.subscription_status !== "active") {
-          document.getElementById("status").textContent =
-            "Subscription inactive. Click below to start your £5/mo subscription.";
-          document.getElementById("subscribe-btn").style.display = "inline-block";
-        } else {
-          document.getElementById("status").textContent =
-            "Subscription active.";
-          document.getElementById("create-api-key-btn").style.display = "inline-block";
-        }
-      }
-
-      // Subscribe button → Stripe Checkout
-      document.getElementById("subscribe-btn").addEventListener("click", async () => {
-        const token = window.localStorage.getItem("idToken");
-        if (!token) {
-          alert("No token found. Please log in again.");
-          return;
-        }
-
-        const res = await fetch(`${apiBase}/billing/create-checkout-session`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({})
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          alert("Error creating checkout session: " + (data.error || res.status));
-          return;
-        }
-
-        // Redirect to Stripe Checkout
-        window.location = data.checkout_url;
-      });
-
-      // Generate API key button
-      document
-        .getElementById("create-api-key-btn")
-        .addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found. Please log in again.");
-            return;
-          }
-
-          const res = await fetch(`${apiBase}/apikey`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({})
-          });
-
-          const data = await res.json();
-          if (!res.ok) {
-            alert("Error generating API key: " + (data.error || res.status));
-            return;
-          }
-
-          document.getElementById("api-key-display").textContent =
-            "API Key (paste into extension):\n" + data.api_key;
-        });
-    </script>
-  </body>
-</html>
+  // existing subscribe-btn / create-api-key-btn handlers stay the same,
+  // they rely on localStorage.getItem("idToken") which we now always set on first login.
+</script>
