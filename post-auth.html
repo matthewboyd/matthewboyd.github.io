@@ -42,13 +42,34 @@
     <!-- Performance review section -->
     <div id="review-section" style="display: none;">
       <h2>Performance review</h2>
-      <p>
-        This will summarise all your PR entries for this year against your
-        levels &amp; expectations spec.
-      </p>
-      <button id="generate-review-btn" style="margin-top: 8px;">
-        Generate performance review
-      </button>
+
+      <p id="review-spec-status"></p>
+
+      <!-- Shown when no spec yet -->
+      <div id="spec-upload-container" style="display: none; margin-top: 8px;">
+        <p>
+          Paste your levels &amp; expectations / performance rubric below.
+          We'll use this to shape your review.
+        </p>
+        <textarea
+          id="spec-text"
+          rows="8"
+          style="width: 100%; max-width: 800px;"
+          placeholder="Paste your company's levels & expectations, performance rubric, or any guidance your manager uses to assess you..."
+        ></textarea>
+        <br />
+        <button id="save-spec-btn" style="margin-top: 8px;">
+          Save specification
+        </button>
+      </div>
+
+      <!-- Shown when spec exists -->
+      <div id="review-actions" style="display: none; margin-top: 8px;">
+        <button id="generate-review-btn">
+          Generate performance review
+        </button>
+      </div>
+
       <pre id="review-output" style="margin-top: 16px; white-space: pre-wrap;"></pre>
     </div>
 
@@ -89,6 +110,11 @@
         const entriesList = document.getElementById("entries-list");
 
         const reviewSection = document.getElementById("review-section");
+        const reviewSpecStatus = document.getElementById("review-spec-status");
+        const specUploadContainer = document.getElementById("spec-upload-container");
+        const specText = document.getElementById("spec-text");
+        const saveSpecBtn = document.getElementById("save-spec-btn");
+        const reviewActions = document.getElementById("review-actions");
         const generateReviewBtn = document.getElementById("generate-review-btn");
         const reviewOutput = document.getElementById("review-output");
 
@@ -222,6 +248,43 @@
           apiKeyDisplay.textContent = "API key revoked.";
           apiKeyBtn.textContent = "Generate API Key";
           revokeBtn.style.display = "none";
+        });
+
+        // Save / update spec
+        saveSpecBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          const text = (specText.value || "").trim();
+          if (!text) {
+            alert("Please paste your specification before saving.");
+            return;
+          }
+
+          const res = await fetch(`${apiBase}/spec`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ spec_text: text }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/spec response:", data);
+
+          if (!res.ok) {
+            alert("Error saving specification: " + (data.error || res.status));
+            return;
+          }
+
+          reviewSpecStatus.textContent =
+            "Specification uploaded. You can generate a performance review below.";
+          specUploadContainer.style.display = "none";
+          reviewActions.style.display = "block";
         });
 
         // Load first page of entries
@@ -439,6 +502,11 @@
         const debugEl = document.getElementById("debug");
         const apiKeyDisplay = document.getElementById("api-key-display");
 
+        const reviewSection = document.getElementById("review-section");
+        const reviewSpecStatus = document.getElementById("review-spec-status");
+        const specUploadContainer = document.getElementById("spec-upload-container");
+        const reviewActions = document.getElementById("review-actions");
+
         statusEl.textContent = "Loading account...";
 
         const res = await fetch(`${apiBase}/user/init`, {
@@ -463,6 +531,7 @@
         }
 
         const hasApiKey = !!data.has_api_key;
+        const hasSpec = !!data.has_review_spec; // <--- new from backend
 
         if (data.subscription_status !== "active") {
           statusEl.textContent =
@@ -471,6 +540,7 @@
           apiKeyBtn.style.display = "none";
           revokeBtn.style.display = "none";
           apiKeyDisplay.textContent = "";
+          reviewSection.style.display = "none";
         } else {
           statusEl.textContent = "Subscription active.";
           subscribeBtn.style.display = "none";
@@ -488,6 +558,19 @@
           // show entries + review sections once user is active
           if (window._showAdvancedSections) {
             window._showAdvancedSections();
+          }
+
+          // Control review section based on whether a spec exists
+          if (hasSpec) {
+            reviewSpecStatus.textContent =
+              "Specification uploaded. You can generate a performance review below.";
+            specUploadContainer.style.display = "none";
+            reviewActions.style.display = "block";
+          } else {
+            reviewSpecStatus.textContent =
+              "You haven't added your levels & expectations specification yet. Paste it below to enable performance review generation.";
+            specUploadContainer.style.display = "block";
+            reviewActions.style.display = "none";
           }
         }
       }
