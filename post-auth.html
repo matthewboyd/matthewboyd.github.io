@@ -34,7 +34,7 @@
       <div id="entries-controls" style="margin-top: 8px; display: none;">
         <button id="next-page-btn">Next 20</button>
       </div>
-      <ul id="entries-list" style="margin-top: 12px;"></ul>
+      <ul id="entries-list" style="margin-top: 12px; list-style-type: none; padding-left: 0;"></ul>
     </div>
 
     <hr style="margin: 24px 0;" />
@@ -57,8 +57,9 @@
     <script>
       const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
 
-      // pagination cursor for entries
+      // pagination cursor + month grouping state
       let entriesNextCursor = null;
+      let lastRenderedMonthKey = null;
 
       function parseHash() {
         const raw = window.location.hash.startsWith("#")
@@ -106,7 +107,7 @@
           "idToken (localStorage): " + (storedToken || "null") + "\n" +
           "billing: " + (billing || "null");
 
-        // Show billing status if present
+        // Billing status
         if (billing === "success") {
           statusEl.textContent =
             "Payment complete – checking subscription status…";
@@ -155,7 +156,6 @@
             return;
           }
 
-          // Redirect to Stripe Checkout
           window.location = data.checkout_url;
         });
 
@@ -232,6 +232,7 @@
             return;
           }
           entriesNextCursor = null;
+          lastRenderedMonthKey = null;
           entriesList.innerHTML = "";
           await loadEntriesPage(token, false);
         });
@@ -303,29 +304,121 @@
             return;
           }
 
-          // Append entries
-          (data.items || []).forEach((item) => {
-            const li = document.createElement("li");
-            const date = item.date || "";
-            const repo = item.repo || "";
+          const items = data.items || [];
+
+          // Append items, grouped by month with edit button
+          items.forEach((item) => {
+            const { monthKey, displayDate } = computeMonthAndDate(item);
+
+            // Month header
+            if (monthKey !== lastRenderedMonthKey) {
+              const headerLi = document.createElement("li");
+              headerLi.textContent = monthKey;
+              headerLi.style.fontWeight = "bold";
+              headerLi.style.marginTop = lastRenderedMonthKey ? "16px" : "0";
+              headerLi.style.marginBottom = "4px";
+              entriesList.appendChild(headerLi);
+              lastRenderedMonthKey = monthKey;
+            }
+
+            const repoName = item.repo_name || item.repo || "";
             const pr = item.pr_number || "";
-            const summary = item.summary || "";
-            const url = item.url || "#";
+            let summary = item.summary || "";
+            const prUrl = item.pr_url || item.url || "#";
+            const eventTs = item.event_ts || item.date || "";
 
-            li.textContent = `[${date}] ${repo} #${pr} – ${summary}`;
+            const li = document.createElement("li");
+            li.style.display = "flex";
+            li.style.alignItems = "center";
             li.style.marginBottom = "6px";
+            li.style.gap = "8px";
 
-            li.addEventListener("click", () => {
-              if (url && url !== "#") {
-                window.open(url, "_blank");
+            const textSpan = document.createElement("span");
+            textSpan.style.flex = "1 1 auto";
+            textSpan.style.cursor = prUrl && prUrl !== "#" ? "pointer" : "default";
+            textSpan.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+
+            // click entry to open PR in new tab
+            textSpan.addEventListener("click", () => {
+              if (prUrl && prUrl !== "#") {
+                window.open(prUrl, "_blank");
               }
             });
 
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.style.fontSize = "12px";
+            editBtn.style.padding = "2px 6px";
+
+            editBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+
+              const current = summary;
+              const updated = prompt("Edit your summary:", current);
+              if (updated === null) return; // cancelled
+              const trimmed = updated.trim();
+              if (!trimmed || trimmed === current) return;
+
+              const token = window.localStorage.getItem("idToken");
+              if (!token) {
+                alert("No token found, please sign in again.");
+                return;
+              }
+
+              const res = await fetch(`${apiBase}/entries/update`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  event_ts: eventTs,
+                  summary: trimmed,
+                }),
+              });
+
+              const respData = await res.json().catch(() => ({}));
+              console.log("/entries/update response:", respData);
+
+              if (!res.ok) {
+                alert("Error updating entry: " + (respData.error || res.status));
+                return;
+              }
+
+              // Update UI
+              summary = trimmed;
+              textSpan.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+            });
+
+            li.appendChild(textSpan);
+            li.appendChild(editBtn);
             entriesList.appendChild(li);
           });
 
-          entriesControls.style.display = (data.has_more ? "block" : "none");
+          entriesControls.style.display = data.has_more ? "block" : "none";
           entriesNextCursor = data.next_cursor || null;
+        }
+
+        function computeMonthAndDate(item) {
+          const rawDate = item.date || item.event_ts || "";
+          if (!rawDate) {
+            return { monthKey: "Unknown", displayDate: "" };
+          }
+
+          const d = new Date(rawDate);
+          if (Number.isNaN(d.getTime())) {
+            // Fallback: just use raw string
+            return { monthKey: "Unknown", displayDate: rawDate };
+          }
+
+          const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+          ];
+          const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+          const displayDate = d.toISOString().split("T")[0]; // YYYY-MM-DD
+
+          return { monthKey, displayDate };
         }
 
         // Expose sections only when subscription is active (set in initUser)
