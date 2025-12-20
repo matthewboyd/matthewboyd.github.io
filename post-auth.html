@@ -17,6 +17,10 @@
       Generate API Key
     </button>
 
+    <button id="revoke-api-key-btn" style="margin-top: 16px; margin-left: 8px; display: none;">
+      Revoke API Key
+    </button>
+
     <pre id="api-key-display" style="margin-top: 16px;"></pre>
     <pre id="debug" style="margin-top: 16px; font-size: 12px; opacity: 0.8;"></pre>
 
@@ -41,13 +45,14 @@
         const debugEl = document.getElementById("debug");
         const subscribeBtn = document.getElementById("subscribe-btn");
         const apiKeyBtn = document.getElementById("create-api-key-btn");
+        const revokeBtn = document.getElementById("revoke-api-key-btn");
         const apiKeyDisplay = document.getElementById("api-key-display");
 
         const { idToken, billing } = parseHash();
         const storedToken = window.localStorage.getItem("idToken");
         let tokenToUse = idToken || storedToken || null;
 
-        // Debug info so you can see what's happening
+        // Debug info
         console.log("location.hash:", window.location.hash);
         console.log("idToken from hash:", idToken);
         console.log("idToken from localStorage:", storedToken);
@@ -73,7 +78,6 @@
         }
 
         if (!tokenToUse) {
-          // Really nothing: no hash token, no stored token
           statusEl.textContent =
             "No token found. Please sign in again.";
           return;
@@ -112,6 +116,7 @@
           window.location = data.checkout_url;
         });
 
+        // Generate / show existing key
         apiKeyBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -125,7 +130,7 @@
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`,
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify({ action: "get_or_create" }),
           });
 
           const data = await res.json().catch(() => ({}));
@@ -138,6 +143,42 @@
 
           apiKeyDisplay.textContent =
             "API Key (paste into extension):\n" + data.api_key;
+          apiKeyBtn.textContent = "Show API Key";
+          revokeBtn.style.display = "inline-block";
+        });
+
+        // Revoke key
+        revokeBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          if (!confirm("Revoke your current API key? Your extension will stop working until you generate a new one.")) {
+            return;
+          }
+
+          const res = await fetch(`${apiBase}/apikey`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action: "revoke" }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/apikey revoke response:", data);
+
+          if (!res.ok) {
+            alert("Error revoking API key: " + (data.error || res.status));
+            return;
+          }
+
+          apiKeyDisplay.textContent = "API key revoked.";
+          apiKeyBtn.textContent = "Generate API Key";
+          revokeBtn.style.display = "none";
         });
       });
 
@@ -145,7 +186,9 @@
         const statusEl = document.getElementById("status");
         const subscribeBtn = document.getElementById("subscribe-btn");
         const apiKeyBtn = document.getElementById("create-api-key-btn");
+        const revokeBtn = document.getElementById("revoke-api-key-btn");
         const debugEl = document.getElementById("debug");
+        const apiKeyDisplay = document.getElementById("api-key-display");
 
         statusEl.textContent = "Loading account...";
 
@@ -170,15 +213,28 @@
           return;
         }
 
+        const hasApiKey = !!data.has_api_key;
+
         if (data.subscription_status !== "active") {
           statusEl.textContent =
             "Subscription inactive. Click below to start your £5/mo subscription.";
           subscribeBtn.style.display = "inline-block";
           apiKeyBtn.style.display = "none";
+          revokeBtn.style.display = "none";
+          apiKeyDisplay.textContent = "";
         } else {
           statusEl.textContent = "Subscription active.";
           subscribeBtn.style.display = "none";
           apiKeyBtn.style.display = "inline-block";
+
+          if (hasApiKey) {
+            apiKeyBtn.textContent = "Show API Key";
+            revokeBtn.style.display = "inline-block";
+          } else {
+            apiKeyBtn.textContent = "Generate API Key";
+            revokeBtn.style.display = "none";
+            apiKeyDisplay.textContent = "";
+          }
         }
       }
     </script>
