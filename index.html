@@ -3,11 +3,413 @@
   <head>
     <meta charset="utf-8" />
     <title>PR AI Evidence Logger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg-dark: #050816;
+        --bg-card: #0b1020;
+        --accent: #6366f1;
+        --accent-soft: rgba(99,102,241,0.16);
+        --accent-strong: #f97316;
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+        --border-subtle: rgba(148,163,184,0.35);
+        --radius-xl: 18px;
+        --shadow-soft: 0 24px 60px rgba(15,23,42,0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, #1d243d 0, transparent 55%),
+          radial-gradient(circle at bottom right, #0f172a 0, transparent 55%),
+          var(--bg-dark);
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .shell {
+        max-width: 1000px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 32px;
+        background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+        border-radius: 24px;
+        border: 1px solid rgba(148,163,184,0.35);
+        box-shadow: var(--shadow-soft);
+        padding: 32px 32px 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .shell::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background:
+          radial-gradient(circle at 10% 0%, rgba(99,102,241,0.18), transparent 55%),
+          radial-gradient(circle at 100% 100%, rgba(236,72,153,0.16), transparent 60%);
+        opacity: 0.9;
+        pointer-events: none;
+      }
+
+      .shell-inner {
+        position: relative;
+        z-index: 1;
+        display: contents;
+      }
+
+      .hero {
+        padding-right: 16px;
+      }
+
+      .logo-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .logo-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background:
+          conic-gradient(from 180deg at 50% 50%, #6366f1, #ec4899, #f97316, #22c55e, #6366f1);
+        padding: 1px;
+      }
+
+      .logo-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        background: #020617;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .logo-text {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--text-muted);
+      }
+
+      h1 {
+        font-size: clamp(26px, 3vw, 32px);
+        line-height: 1.1;
+        margin: 0 0 12px;
+      }
+
+      h1 span.gradient {
+        background: linear-gradient(135deg, #a855f7, #6366f1, #22c55e);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+
+      .tagline {
+        margin: 0 0 16px;
+        color: var(--text-muted);
+        font-size: 15px;
+      }
+
+      .highlight-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: rgba(15,23,42,0.9);
+        border: 1px solid var(--accent-soft);
+        color: var(--accent);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-bottom: 14px;
+      }
+
+      .highlight-pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 0 4px rgba(34,197,94,0.36);
+      }
+
+      .hero-points {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+        margin-top: 18px;
+        margin-bottom: 12px;
+        font-size: 13px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: rgba(15,23,42,0.92);
+        border: 1px solid rgba(148,163,184,0.35);
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .pill strong {
+        color: #e5e7eb;
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 18px;
+      }
+
+      .btn-primary {
+        border-radius: 999px;
+        padding: 9px 18px;
+        border: none;
+        outline: none;
+        background: linear-gradient(135deg, #6366f1, #ec4899);
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 16px 40px rgba(79,70,229,0.55);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary span.arrow {
+        font-size: 16px;
+        transform: translateY(1px);
+      }
+
+      .cta-note {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .cta-note strong {
+        color: #e5e7eb;
+      }
+
+      .side-card {
+        background: radial-gradient(circle at top left, #020617, #020617 25%, #020617 100%);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-subtle);
+        padding: 18px 16px 16px;
+        box-shadow: 0 18px 45px rgba(15,23,42,0.85);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .side-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .side-title {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .side-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(22,163,74,0.16);
+        color: #bbf7d0;
+        border: 1px solid rgba(22,163,74,0.45);
+      }
+
+      .mock-card {
+        border-radius: 12px;
+        background: rgba(15,23,42,0.9);
+        border: 1px solid rgba(148,163,184,0.4);
+        padding: 10px 10px 8px;
+        font-size: 11px;
+      }
+
+      .mock-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .pill-type {
+        border-radius: 999px;
+        padding: 2px 7px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        background: rgba(99,102,241,0.16);
+        color: #c7d2fe;
+      }
+
+      .mock-chip {
+        font-size: 10px;
+        color: var(--text-muted);
+      }
+
+      .mock-body {
+        color: var(--text-main);
+        line-height: 1.4;
+      }
+
+      .mock-body span.key {
+        color: #c4b5fd;
+      }
+
+      .mock-tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .mock-tag {
+        border-radius: 999px;
+        padding: 3px 7px;
+        font-size: 10px;
+        background: rgba(15,23,42,1);
+        border: 1px solid rgba(148,163,184,0.4);
+        color: var(--text-muted);
+      }
+
+      .sub-footnote {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      @media (max-width: 800px) {
+        .shell {
+          grid-template-columns: minmax(0, 1fr);
+          padding: 22px 18px 18px;
+        }
+        .hero {
+          padding-right: 0;
+        }
+      }
+    </style>
   </head>
   <body>
-    <h1>PR AI Evidence Logger</h1>
-    <p>Turn GitHub PRs into performance-review-ready evidence.</p>
-    <button id="login-btn">Sign up / Sign in</button>
+    <main class="shell">
+      <div class="shell-inner">
+        <!-- Left: Hero -->
+        <section class="hero">
+          <div class="logo-row">
+            <div class="logo-mark">
+              <div class="logo-inner">PR</div>
+            </div>
+            <div>
+              <div class="logo-text">PR AI Evidence Logger</div>
+            </div>
+          </div>
+
+          <div class="highlight-pill">
+            <span class="highlight-pill-dot"></span>
+            <span>For performance-driven engineers</span>
+          </div>
+
+          <h1>
+            Turn your GitHub PRs into
+            <span class="gradient">performance-ready evidence.</span>
+          </h1>
+
+          <p class="tagline">
+            Every time you merge or approve a PR, we capture a short summary
+            and sync it into your personal PR log — ready for promotion packs,
+            calibration, and self-reviews.
+          </p>
+
+          <div class="hero-points">
+            <div class="pill">
+              <strong>1-click</strong> from GitHub to Google Sheets
+            </div>
+            <div class="pill">
+              <strong>AI-ready</strong> performance reviews in minutes
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <button id="login-btn" class="btn-primary">
+              Sign up / Sign in with GitHub auth
+              <span class="arrow">↗</span>
+            </button>
+            <div class="cta-note">
+              <strong>£5/month</strong> • cancel anytime
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Mock UI -->
+        <aside class="side-card">
+          <div class="side-header">
+            <div class="side-title">What gets captured?</div>
+            <div class="side-badge">Live PR feed</div>
+          </div>
+
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <span class="pill-type">Merged PR</span>
+              <span class="mock-chip">Dec 20 · matthewboyd</span>
+            </div>
+            <div class="mock-body">
+              <span class="key">Summary</span>: Introduced AI-assisted PR logging
+              for performance review evidence. Updated extension flow and DynamoDB
+              schema to support per-user entries and caching.
+            </div>
+            <div class="mock-tag-row">
+              <span class="mock-tag">Ownership</span>
+              <span class="mock-tag">Quality</span>
+              <span class="mock-tag">Impact</span>
+            </div>
+          </div>
+
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <span class="pill-type" style="background: rgba(34,197,94,0.14); color:#bbf7d0;">
+                Performance review
+              </span>
+              <span class="mock-chip">2025 · Draft</span>
+            </div>
+            <div class="mock-body">
+              AI-generated narrative that maps your PRs to your levels &
+              expectations — ready to paste into your review form.
+            </div>
+          </div>
+
+          <p class="sub-footnote">
+            Works with GitHub + Google Sheets. Your manager gets stories,
+            not just commits.
+          </p>
+        </aside>
+      </div>
+    </main>
 
     <script>
       const cognitoDomain = "eu-west-1jh5bgov66.auth.eu-west-1.amazoncognito.com";
@@ -16,13 +418,13 @@
 
       const loginUrl =
         `https://${cognitoDomain}/login` +
-        `?client_id=${clientId}` +
+        `?client_id=${encodeURIComponent(clientId)}` +
         `&response_type=token` +
-        `&scope=email+openid+phone` + // note: hard-coded with +
+        `&scope=${encodeURIComponent("email openid phone")}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
       document.getElementById("login-btn").addEventListener("click", () => {
-        window.location.href = loginUrl;
+        window.location = loginUrl;
       });
     </script>
   </body>
