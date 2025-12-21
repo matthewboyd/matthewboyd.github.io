@@ -210,10 +210,6 @@
         display: none;
       }
 
-      #debug {
-        margin-top: 16px;
-      }
-
       textarea {
         border-radius: 10px;
         border: 1px solid rgba(148,163,184,0.45);
@@ -416,8 +412,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           </pre>
         </section>
       </div>
-
-      <pre id="debug" style="margin-top: 18px; font-size: 11px; opacity: 0.6;"></pre>
     </div>
 
     <script>
@@ -434,14 +428,12 @@ Your AI-generated performance review will appear here after you click "Generate 
         const params = new URLSearchParams(raw);
         return {
           idToken: params.get("id_token"),
-          accessToken: params.get("access_token"),
           billing: params.get("billing"),
         };
       }
 
       document.addEventListener("DOMContentLoaded", () => {
         const statusEl = document.getElementById("status");
-        const debugEl = document.getElementById("debug");
         const subscribeBtn = document.getElementById("subscribe-btn");
         const apiKeyBtn = document.getElementById("create-api-key-btn");
         const revokeBtn = document.getElementById("revoke-api-key-btn");
@@ -467,13 +459,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         const { idToken, billing } = parseHash();
         const storedToken = window.localStorage.getItem("idToken");
         let tokenToUse = idToken || storedToken || null;
-
-        // Debug
-        debugEl.textContent =
-          "hash: " + window.location.hash + "\n" +
-          "idToken (hash): " + (idToken || "null") + "\n" +
-          "idToken (localStorage): " + (storedToken || "null") + "\n" +
-          "billing: " + (billing || "null");
 
         if (billing === "success") {
           statusEl.textContent = "Payment complete – checking subscription status…";
@@ -879,7 +864,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         const subscribeBtn = document.getElementById("subscribe-btn");
         const apiKeyBtn = document.getElementById("create-api-key-btn");
         const revokeBtn = document.getElementById("revoke-api-key-btn");
-        const debugEl = document.getElementById("debug");
         const apiKeyDisplay = document.getElementById("api-key-display");
         const subscriptionBadge = document.getElementById("subscription-badge");
 
@@ -901,9 +885,6 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         const data = await res.json().catch(() => ({}));
         console.log("/user/init response:", data);
-        debugEl.textContent +=
-          "\n\n/user/init status: " + res.status +
-          "\n/user/init body: " + JSON.stringify(data, null, 2);
 
         if (!res.ok) {
           statusEl.textContent = "Error: " + (data.error || res.status);
@@ -938,7 +919,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           if (hasApiKey) {
             apiKeyBtn.textContent = "Show API Key";
             revokeBtn.style.display = "inline-flex";
-            // Keep it hidden until user explicitly clicks
             apiKeyDisplay.style.display = "none";
             apiKeyDisplay.textContent = "";
           } else {
