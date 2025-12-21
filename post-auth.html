@@ -208,10 +208,8 @@
         overflow-x: auto;
       }
 
-      /* Hidden by default, shown once a key exists or is requested */
       #api-key-display {
         margin-top: 12px;
-        display: none;
       }
 
       #debug {
@@ -226,14 +224,6 @@
         font-size: 13px;
         padding: 10px 12px;
         resize: vertical;
-        width: 100%;
-        max-width: 100%;
-      }
-
-      textarea:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(99,102,241,0.6);
       }
 
       textarea::placeholder {
@@ -268,10 +258,9 @@
       }
 
       #review-output {
-        margin-top: 14px;
+        margin-top: 12px;
         max-height: 420px;
         overflow-y: auto;
-        white-space: pre-wrap;
       }
 
       .section-label {
@@ -317,13 +306,13 @@
 
           <div id="status"></div>
 
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
             <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
               Start £5/month subscription
             </button>
 
             <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
-              Generate / Show API Key
+              Generate API Key
             </button>
 
             <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
@@ -331,12 +320,8 @@
             </button>
           </div>
 
-          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-            Use your API key in the Chrome extension to log PR activity from GitHub.
-          </div>
-
           <div class="section-label">API key</div>
-          <pre id="api-key-display"></pre>
+          <pre id="api-key-display">Generate an API key to connect your Chrome extension.</pre>
 
           <hr />
 
@@ -364,32 +349,31 @@
         </section>
 
         <!-- Right column: spec + performance review -->
-        <section id="review-section" class="card">
+        <section class="card">
           <div class="card-header">
             <div>
               <div class="card-title">Performance review generator</div>
               <div class="card-subtitle">
-                Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
+                Plug in your levels & expectations and let AI assemble the narrative.
               </div>
             </div>
           </div>
 
           <p id="review-spec-status"></p>
 
-          <!-- Step 1: spec -->
           <div id="spec-upload-container" style="display: none; margin-top: 8px;">
             <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
               Paste your company’s levels &amp; expectations / performance rubric below.
-              This box is fully editable — we’ll store it privately and use it to guide your review.
+              We’ll store it privately and use it to map your PR evidence to the right behaviours.
             </p>
             <textarea
               id="spec-text"
               rows="8"
+              style="width: 100%; max-width: 100%;"
               placeholder="Example:
 L3 Engineer:
 - Delivers scoped features independently.
 - Writes well-tested, maintainable code...
-
 L4 Engineer:
 - Owns end-to-end delivery of complex projects...
 (etc.)"
@@ -400,7 +384,6 @@ L4 Engineer:
             </button>
           </div>
 
-          <!-- Step 2: generate review -->
           <div id="review-actions" style="display: none; margin-top: 8px;">
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
               <button id="generate-review-btn" class="btn btn-primary">
@@ -415,9 +398,7 @@ L4 Engineer:
             </div>
           </div>
 
-          <pre id="review-output">
-Your AI-generated performance review will appear here after you click "Generate performance review".
-          </pre>
+          <pre id="review-output" style="margin-top: 14px; white-space: pre-wrap;"></pre>
         </section>
       </div>
 
@@ -562,7 +543,6 @@ Your AI-generated performance review will appear here after you click "Generate 
             return;
           }
 
-          apiKeyDisplay.style.display = "block";
           apiKeyDisplay.textContent =
             "API Key (paste into extension):\n" + data.api_key;
           apiKeyBtn.textContent = "Show API Key";
@@ -598,9 +578,8 @@ Your AI-generated performance review will appear here after you click "Generate 
             return;
           }
 
-          apiKeyDisplay.style.display = "block";
           apiKeyDisplay.textContent = "API key revoked.";
-          apiKeyBtn.textContent = "Generate / Show API Key";
+          apiKeyBtn.textContent = "Generate API Key";
           revokeBtn.style.display = "none";
         });
 
@@ -951,8 +930,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscribeBtn.style.display = "inline-flex";
           apiKeyBtn.style.display = "none";
           revokeBtn.style.display = "none";
-          apiKeyDisplay.style.display = "none";
-
+          apiKeyDisplay.textContent = "You’ll see your API key here once subscribed.";
           reviewSection.style.display = "block";
 
           subscriptionBadge.textContent = "Inactive";
@@ -968,12 +946,10 @@ Your AI-generated performance review will appear here after you click "Generate 
           if (hasApiKey) {
             apiKeyBtn.textContent = "Show API Key";
             revokeBtn.style.display = "inline-flex";
-            apiKeyDisplay.style.display = "block";
-            apiKeyDisplay.textContent = "Click “Show API Key” to reveal your key.";
           } else {
-            apiKeyBtn.textContent = "Generate / Show API Key";
+            apiKeyBtn.textContent = "Generate API Key";
             revokeBtn.style.display = "none";
-            apiKeyDisplay.style.display = "none";
+            apiKeyDisplay.textContent = "Generate an API key to connect your Chrome extension.";
           }
 
           // show entries + review sections once user is active
@@ -989,7 +965,7 @@ Your AI-generated performance review will appear here after you click "Generate 
             reviewActions.style.display = "block";
           } else {
             reviewSpecStatus.textContent =
-              "Step 1: Paste your levels & expectations below to enable performance review generation.";
+              "You haven't added your levels & expectations specification yet. Paste it below to enable performance review generation.";
             specUploadContainer.style.display = "block";
             reviewActions.style.display = "none";
           }
