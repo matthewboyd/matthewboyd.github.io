@@ -7,12 +7,8 @@
     <style>
       :root {
         --bg-dark: #020617;
-        --bg-surface: #020617;
-        --bg-panel: #020617;
-        --bg-card: #020617;
         --accent: #6366f1;
         --accent-soft: rgba(99,102,241,0.18);
-        --accent-strong: #f97316;
         --text-main: #f9fafb;
         --text-muted: #9ca3af;
         --border-subtle: rgba(148,163,184,0.35);
@@ -208,8 +204,10 @@
         overflow-x: auto;
       }
 
+      /* API key box hidden until explicitly shown */
       #api-key-display {
         margin-top: 12px;
+        display: none;
       }
 
       #debug {
@@ -224,6 +222,14 @@
         font-size: 13px;
         padding: 10px 12px;
         resize: vertical;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(99,102,241,0.6);
       }
 
       textarea::placeholder {
@@ -258,9 +264,10 @@
       }
 
       #review-output {
-        margin-top: 12px;
+        margin-top: 14px;
         max-height: 420px;
         overflow-y: auto;
+        white-space: pre-wrap;
       }
 
       .section-label {
@@ -306,13 +313,13 @@
 
           <div id="status"></div>
 
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
             <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
               Start £5/month subscription
             </button>
 
             <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
-              Generate API Key
+              Generate / Show API Key
             </button>
 
             <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
@@ -320,8 +327,12 @@
             </button>
           </div>
 
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+            Use your API key in the Chrome extension to log PR activity from GitHub.
+          </div>
+
           <div class="section-label">API key</div>
-          <pre id="api-key-display">Generate an API key to connect your Chrome extension.</pre>
+          <pre id="api-key-display"></pre>
 
           <hr />
 
@@ -349,31 +360,32 @@
         </section>
 
         <!-- Right column: spec + performance review -->
-        <section class="card">
+        <section id="review-section" class="card">
           <div class="card-header">
             <div>
               <div class="card-title">Performance review generator</div>
               <div class="card-subtitle">
-                Plug in your levels & expectations and let AI assemble the narrative.
+                Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
               </div>
             </div>
           </div>
 
           <p id="review-spec-status"></p>
 
+          <!-- Step 1: spec -->
           <div id="spec-upload-container" style="display: none; margin-top: 8px;">
             <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
               Paste your company’s levels &amp; expectations / performance rubric below.
-              We’ll store it privately and use it to map your PR evidence to the right behaviours.
+              This box is fully editable — we’ll store it privately and use it to guide your review.
             </p>
             <textarea
               id="spec-text"
               rows="8"
-              style="width: 100%; max-width: 100%;"
               placeholder="Example:
 L3 Engineer:
 - Delivers scoped features independently.
 - Writes well-tested, maintainable code...
+
 L4 Engineer:
 - Owns end-to-end delivery of complex projects...
 (etc.)"
@@ -384,6 +396,7 @@ L4 Engineer:
             </button>
           </div>
 
+          <!-- Step 2: generate review -->
           <div id="review-actions" style="display: none; margin-top: 8px;">
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
               <button id="generate-review-btn" class="btn btn-primary">
@@ -398,7 +411,9 @@ L4 Engineer:
             </div>
           </div>
 
-          <pre id="review-output" style="margin-top: 14px; white-space: pre-wrap;"></pre>
+          <pre id="review-output">
+Your AI-generated performance review will appear here after you click "Generate performance review".
+          </pre>
         </section>
       </div>
 
@@ -408,7 +423,6 @@ L4 Engineer:
     <script>
       const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
 
-      // pagination cursor + month grouping state
       let entriesNextCursor = null;
       let lastRenderedMonthKey = null;
 
@@ -421,7 +435,7 @@ L4 Engineer:
         return {
           idToken: params.get("id_token"),
           accessToken: params.get("access_token"),
-          billing: params.get("billing"), // "success" | "cancel" | null
+          billing: params.get("billing"),
         };
       }
 
@@ -454,27 +468,19 @@ L4 Engineer:
         const storedToken = window.localStorage.getItem("idToken");
         let tokenToUse = idToken || storedToken || null;
 
-        // Debug info
-        console.log("location.hash:", window.location.hash);
-        console.log("idToken from hash:", idToken);
-        console.log("idToken from localStorage:", storedToken);
-        console.log("billing:", billing);
+        // Debug
         debugEl.textContent =
           "hash: " + window.location.hash + "\n" +
           "idToken (hash): " + (idToken || "null") + "\n" +
           "idToken (localStorage): " + (storedToken || "null") + "\n" +
           "billing: " + (billing || "null");
 
-        // Billing status copy
         if (billing === "success") {
-          statusEl.textContent =
-            "Payment complete – checking subscription status…";
+          statusEl.textContent = "Payment complete – checking subscription status…";
         } else if (billing === "cancel") {
-          statusEl.textContent =
-            "Payment cancelled. You can retry subscription below.";
+          statusEl.textContent = "Payment cancelled. You can retry subscription below.";
         }
 
-        // If we got a fresh token from Cognito, store it
         if (idToken) {
           window.localStorage.setItem("idToken", idToken);
         }
@@ -486,7 +492,6 @@ L4 Engineer:
           return;
         }
 
-        // Use whichever token we found
         initUser(tokenToUse);
 
         // --- Button handlers ---
@@ -518,7 +523,6 @@ L4 Engineer:
           window.location = data.checkout_url;
         });
 
-        // Generate / show existing key
         apiKeyBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -543,13 +547,12 @@ L4 Engineer:
             return;
           }
 
-          apiKeyDisplay.textContent =
-            "API Key (paste into extension):\n" + data.api_key;
+          apiKeyDisplay.style.display = "block";
+          apiKeyDisplay.textContent = "API Key (paste into extension):\n" + data.api_key;
           apiKeyBtn.textContent = "Show API Key";
           revokeBtn.style.display = "inline-block";
         });
 
-        // Revoke key
         revokeBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -578,12 +581,12 @@ L4 Engineer:
             return;
           }
 
+          apiKeyDisplay.style.display = "block";
           apiKeyDisplay.textContent = "API key revoked.";
-          apiKeyBtn.textContent = "Generate API Key";
+          apiKeyBtn.textContent = "Generate / Show API Key";
           revokeBtn.style.display = "none";
         });
 
-        // Save / update spec
         saveSpecBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -620,7 +623,6 @@ L4 Engineer:
           reviewActions.style.display = "block";
         });
 
-        // Load first page of entries
         showEntriesBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -633,7 +635,6 @@ L4 Engineer:
           await loadEntriesPage(token, false);
         });
 
-        // Load next page
         nextPageBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -643,7 +644,6 @@ L4 Engineer:
           await loadEntriesPage(token, true);
         });
 
-        // Helper to render review result (handles cached flag + timestamp)
         function renderReview(data) {
           const text = data.review_text || "(No review text returned)";
           const cached = data.cached ? " (cached)" : "";
@@ -665,7 +665,6 @@ L4 Engineer:
           }
         }
 
-        // Generate performance review (uses cache if available)
         generateReviewBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -698,7 +697,6 @@ L4 Engineer:
           renderReview(data);
         });
 
-        // Regenerate performance review (force fresh AI + refresh cache)
         regenerateReviewBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -758,11 +756,9 @@ L4 Engineer:
 
           const items = data.items || [];
 
-          // Append items, grouped by month with hyperlink + edit button
           items.forEach((item) => {
             const { monthKey, displayDate } = computeMonthAndDate(item);
 
-            // Month header
             if (monthKey !== lastRenderedMonthKey) {
               const headerLi = document.createElement("li");
               headerLi.textContent = monthKey;
@@ -785,7 +781,6 @@ L4 Engineer:
             li.style.marginBottom = "6px";
             li.style.gap = "8px";
 
-            // clickable hyperlink for the entry
             const link = document.createElement("a");
             link.style.flex = "1 1 auto";
             link.href = prUrl && prUrl !== "#" ? prUrl : "#";
@@ -805,11 +800,11 @@ L4 Engineer:
 
             editBtn.addEventListener("click", async (e) => {
               e.stopPropagation();
-              e.preventDefault(); // don’t trigger the link
+              e.preventDefault();
 
               const current = summary;
               const updated = prompt("Edit your summary:", current);
-              if (updated === null) return; // cancelled
+              if (updated === null) return;
               const trimmed = updated.trim();
               if (!trimmed || trimmed === current) return;
 
@@ -839,7 +834,6 @@ L4 Engineer:
                 return;
               }
 
-              // Update UI
               summary = trimmed;
               link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
             });
@@ -861,7 +855,6 @@ L4 Engineer:
 
           const d = new Date(rawDate);
           if (Number.isNaN(d.getTime())) {
-            // Fallback: just use raw string
             return { monthKey: "Unknown", displayDate: rawDate };
           }
 
@@ -870,12 +863,11 @@ L4 Engineer:
             "July", "August", "September", "October", "November", "December"
           ];
           const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-          const displayDate = d.toISOString().split("T")[0]; // YYYY-MM-DD
+          const displayDate = d.toISOString().split("T")[0];
 
           return { monthKey, displayDate };
         }
 
-        // Expose sections only when subscription is active (set in initUser)
         window._showAdvancedSections = function () {
           entriesSection.style.display = "block";
           reviewSection.style.display = "block";
@@ -914,15 +906,14 @@ L4 Engineer:
           "\n/user/init body: " + JSON.stringify(data, null, 2);
 
         if (!res.ok) {
-          statusEl.textContent =
-            "Error: " + (data.error || res.status);
+          statusEl.textContent = "Error: " + (data.error || res.status);
           subscriptionBadge.textContent = "Error";
           subscriptionBadge.classList.add("inactive");
           return;
         }
 
         const hasApiKey = !!data.has_api_key;
-        const hasSpec = !!data.has_review_spec; // from backend
+        const hasSpec = !!data.has_review_spec;
 
         if (data.subscription_status !== "active") {
           statusEl.textContent =
@@ -930,7 +921,8 @@ L4 Engineer:
           subscribeBtn.style.display = "inline-flex";
           apiKeyBtn.style.display = "none";
           revokeBtn.style.display = "none";
-          apiKeyDisplay.textContent = "You’ll see your API key here once subscribed.";
+          apiKeyDisplay.style.display = "none";
+
           reviewSection.style.display = "block";
 
           subscriptionBadge.textContent = "Inactive";
@@ -946,18 +938,20 @@ L4 Engineer:
           if (hasApiKey) {
             apiKeyBtn.textContent = "Show API Key";
             revokeBtn.style.display = "inline-flex";
+            // Keep it hidden until user explicitly clicks
+            apiKeyDisplay.style.display = "none";
+            apiKeyDisplay.textContent = "";
           } else {
-            apiKeyBtn.textContent = "Generate API Key";
+            apiKeyBtn.textContent = "Generate / Show API Key";
             revokeBtn.style.display = "none";
-            apiKeyDisplay.textContent = "Generate an API key to connect your Chrome extension.";
+            apiKeyDisplay.style.display = "none";
+            apiKeyDisplay.textContent = "";
           }
 
-          // show entries + review sections once user is active
           if (window._showAdvancedSections) {
             window._showAdvancedSections();
           }
 
-          // Control review section based on whether a spec exists
           if (hasSpec) {
             reviewSpecStatus.textContent =
               "Specification uploaded. You can generate a performance review below.";
@@ -965,7 +959,7 @@ L4 Engineer:
             reviewActions.style.display = "block";
           } else {
             reviewSpecStatus.textContent =
-              "You haven't added your levels & expectations specification yet. Paste it below to enable performance review generation.";
+              "Step 1: Paste your levels & expectations below to enable performance review generation.";
             specUploadContainer.style.display = "block";
             reviewActions.style.display = "none";
           }
