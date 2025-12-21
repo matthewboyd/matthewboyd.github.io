@@ -204,7 +204,6 @@
         overflow-x: auto;
       }
 
-      /* API key box hidden until explicitly shown */
       #api-key-display {
         margin-top: 12px;
         display: none;
@@ -279,7 +278,7 @@
         position: fixed;
         inset: 0;
         background: rgba(15,23,42,0.92);
-        display: none;      /* toggled via JS */
+        display: none;
         align-items: center;
         justify-content: center;
         z-index: 50;
@@ -465,6 +464,15 @@
 
           <p id="review-spec-status"></p>
 
+          <!-- Button to upload/replace spec when one already exists -->
+          <button
+            id="edit-spec-btn"
+            class="btn btn-ghost btn-small"
+            style="display:none; margin-bottom:8px;"
+          >
+            Upload / replace specification
+          </button>
+
           <!-- Step 1: spec -->
           <div id="spec-upload-container" style="display: none; margin-top: 8px;">
             <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
@@ -609,6 +617,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         const generateReviewBtn = document.getElementById("generate-review-btn");
         const regenerateReviewBtn = document.getElementById("regenerate-review-btn");
         const reviewOutput = document.getElementById("review-output");
+        const editSpecBtn = document.getElementById("edit-spec-btn");
 
         const { idToken, billing } = parseHash();
         const storedToken = window.localStorage.getItem("idToken");
@@ -725,6 +734,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           apiKeyDisplay.textContent = "API key revoked.";
           apiKeyBtn.textContent = "Generate / Show API Key";
           revokeBtn.style.display = "none";
+          howtoBtn.style.display = "none";
         });
 
         // How-to overlay handlers
@@ -778,6 +788,16 @@ Your AI-generated performance review will appear here after you click "Generate 
             "Specification uploaded. You can generate a performance review below.";
           specUploadContainer.style.display = "none";
           reviewActions.style.display = "block";
+          editSpecBtn.style.display = "inline-flex";
+        });
+
+        // Allow uploading/replacing spec when one already exists
+        editSpecBtn.addEventListener("click", () => {
+          specText.value = "";
+          specUploadContainer.style.display = "block";
+          reviewActions.style.display = "none";
+          reviewSpecStatus.textContent =
+            "Paste your new specification below, then click Save to replace the existing one.";
         });
 
         showEntriesBtn.addEventListener("click", async () => {
@@ -1044,6 +1064,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         const reviewSpecStatus = document.getElementById("review-spec-status");
         const specUploadContainer = document.getElementById("spec-upload-container");
         const reviewActions = document.getElementById("review-actions");
+        const editSpecBtn = document.getElementById("edit-spec-btn");
 
         statusEl.textContent = "Loading account...";
 
@@ -1113,11 +1134,13 @@ Your AI-generated performance review will appear here after you click "Generate 
               "Specification uploaded. You can generate a performance review below.";
             specUploadContainer.style.display = "none";
             reviewActions.style.display = "block";
+            editSpecBtn.style.display = "inline-flex";
           } else {
             reviewSpecStatus.textContent =
               "Step 1: Paste your levels & expectations below to enable performance review generation.";
             specUploadContainer.style.display = "block";
             reviewActions.style.display = "none";
+            editSpecBtn.style.display = "none";
           }
         }
       }
