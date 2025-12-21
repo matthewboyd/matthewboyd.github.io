@@ -555,3 +555,422 @@ L4 Engineer:
           if (!token) {
             alert("No token found, please sign in again.");
             return;
+          }
+
+          if (!confirm("Revoke your current API key? Your extension will stop working until you generate a new one.")) {
+            return;
+          }
+
+          const res = await fetch(`${apiBase}/apikey`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action: "revoke" }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/apikey revoke response:", data);
+
+          if (!res.ok) {
+            alert("Error revoking API key: " + (data.error || res.status));
+            return;
+          }
+
+          apiKeyDisplay.textContent = "API key revoked.";
+          apiKeyBtn.textContent = "Generate API Key";
+          revokeBtn.style.display = "none";
+        });
+
+        // Save / update spec
+        saveSpecBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          const text = (specText.value || "").trim();
+          if (!text) {
+            alert("Please paste your specification before saving.");
+            return;
+          }
+
+          const res = await fetch(`${apiBase}/specs`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ spec_text: text }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/spec response:", data);
+
+          if (!res.ok) {
+            alert("Error saving specification: " + (data.error || res.status));
+            return;
+          }
+
+          reviewSpecStatus.textContent =
+            "Specification uploaded. You can generate a performance review below.";
+          specUploadContainer.style.display = "none";
+          reviewActions.style.display = "block";
+        });
+
+        // Load first page of entries
+        showEntriesBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+          entriesNextCursor = null;
+          lastRenderedMonthKey = null;
+          entriesList.innerHTML = "";
+          await loadEntriesPage(token, false);
+        });
+
+        // Load next page
+        nextPageBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+          await loadEntriesPage(token, true);
+        });
+
+        // Helper to render review result (handles cached flag + timestamp)
+        function renderReview(data) {
+          const text = data.review_text || "(No review text returned)";
+          const cached = data.cached ? " (cached)" : "";
+          const ts = data.generated_at ? `Generated at: ${data.generated_at}` : "";
+          let header = "";
+
+          if (ts && cached) {
+            header = `${ts} • from cache`;
+          } else if (ts) {
+            header = ts;
+          } else if (cached) {
+            header = "from cache";
+          }
+
+          if (header) {
+            reviewOutput.textContent = header + "\n\n" + text;
+          } else {
+            reviewOutput.textContent = text;
+          }
+        }
+
+        // Generate performance review (uses cache if available)
+        generateReviewBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          reviewOutput.textContent = "Generating performance review...";
+          const year = new Date().getFullYear();
+
+          const res = await fetch(`${apiBase}/performance-review`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ year }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/performance-review response:", data);
+
+          if (!res.ok) {
+            reviewOutput.textContent =
+              "Error generating review: " + (data.error || res.status) +
+              (data.details ? "\n\n" + data.details : "");
+            return;
+          }
+
+          renderReview(data);
+        });
+
+        // Regenerate performance review (force fresh AI + refresh cache)
+        regenerateReviewBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          reviewOutput.textContent = "Regenerating performance review with latest entries...";
+          const year = new Date().getFullYear();
+
+          const res = await fetch(`${apiBase}/performance-review`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ year, force_regen: true }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/performance-review (force_regen) response:", data);
+
+          if (!res.ok) {
+            reviewOutput.textContent =
+              "Error regenerating review: " + (data.error || res.status) +
+              (data.details ? "\n\n" + data.details : "");
+            return;
+          }
+
+          renderReview(data);
+        });
+
+        async function loadEntriesPage(token, isNext) {
+          const year = new Date().getFullYear();
+
+          const url = new URL(`${apiBase}/entries`);
+          url.searchParams.set("year", String(year));
+          url.searchParams.set("limit", "20");
+          if (isNext && entriesNextCursor) {
+            url.searchParams.set("cursor", entriesNextCursor);
+          }
+
+          const res = await fetch(url.toString(), {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/entries response:", data);
+
+          if (!res.ok) {
+            alert("Error loading entries: " + (data.error || res.status));
+            return;
+          }
+
+          const items = data.items || [];
+
+          // Append items, grouped by month with hyperlink + edit button
+          items.forEach((item) => {
+            const { monthKey, displayDate } = computeMonthAndDate(item);
+
+            // Month header
+            if (monthKey !== lastRenderedMonthKey) {
+              const headerLi = document.createElement("li");
+              headerLi.textContent = monthKey;
+              headerLi.style.fontWeight = "bold";
+              headerLi.style.marginTop = lastRenderedMonthKey ? "16px" : "0";
+              headerLi.style.marginBottom = "4px";
+              entriesList.appendChild(headerLi);
+              lastRenderedMonthKey = monthKey;
+            }
+
+            const repoName = item.repo_name || item.repo || "";
+            const pr = item.pr_number || "";
+            let summary = item.summary || "";
+            const prUrl = item.pr_url || item.url || "#";
+            const eventTs = item.event_ts || item.date || "";
+
+            const li = document.createElement("li");
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.marginBottom = "6px";
+            li.style.gap = "8px";
+
+            // clickable hyperlink for the entry
+            const link = document.createElement("a");
+            link.style.flex = "1 1 auto";
+            link.href = prUrl && prUrl !== "#" ? prUrl : "#";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+            if (!prUrl || prUrl === "#") {
+              link.style.pointerEvents = "none";
+              link.style.textDecoration = "none";
+              link.style.color = "inherit";
+            }
+
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.className = "btn btn-ghost btn-small";
+            editBtn.style.flex = "0 0 auto";
+
+            editBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              e.preventDefault(); // don’t trigger the link
+
+              const current = summary;
+              const updated = prompt("Edit your summary:", current);
+              if (updated === null) return; // cancelled
+              const trimmed = updated.trim();
+              if (!trimmed || trimmed === current) return;
+
+              const token = window.localStorage.getItem("idToken");
+              if (!token) {
+                alert("No token found, please sign in again.");
+                return;
+              }
+
+              const res = await fetch(`${apiBase}/entries/update`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  event_ts: eventTs,
+                  summary: trimmed,
+                }),
+              });
+
+              const respData = await res.json().catch(() => ({}));
+              console.log("/entries/update response:", respData);
+
+              if (!res.ok) {
+                alert("Error updating entry: " + (respData.error || res.status));
+                return;
+              }
+
+              // Update UI
+              summary = trimmed;
+              link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+            });
+
+            li.appendChild(link);
+            li.appendChild(editBtn);
+            entriesList.appendChild(li);
+          });
+
+          entriesControls.style.display = data.has_more ? "flex" : "none";
+          entriesNextCursor = data.next_cursor || null;
+        }
+
+        function computeMonthAndDate(item) {
+          const rawDate = item.date || item.event_ts || "";
+          if (!rawDate) {
+            return { monthKey: "Unknown", displayDate: "" };
+          }
+
+          const d = new Date(rawDate);
+          if (Number.isNaN(d.getTime())) {
+            // Fallback: just use raw string
+            return { monthKey: "Unknown", displayDate: rawDate };
+          }
+
+          const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+          ];
+          const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+          const displayDate = d.toISOString().split("T")[0]; // YYYY-MM-DD
+
+          return { monthKey, displayDate };
+        }
+
+        // Expose sections only when subscription is active (set in initUser)
+        window._showAdvancedSections = function () {
+          entriesSection.style.display = "block";
+          reviewSection.style.display = "block";
+        };
+      });
+
+      async function initUser(token) {
+        const statusEl = document.getElementById("status");
+        const subscribeBtn = document.getElementById("subscribe-btn");
+        const apiKeyBtn = document.getElementById("create-api-key-btn");
+        const revokeBtn = document.getElementById("revoke-api-key-btn");
+        const debugEl = document.getElementById("debug");
+        const apiKeyDisplay = document.getElementById("api-key-display");
+        const subscriptionBadge = document.getElementById("subscription-badge");
+
+        const reviewSection = document.getElementById("review-section");
+        const reviewSpecStatus = document.getElementById("review-spec-status");
+        const specUploadContainer = document.getElementById("spec-upload-container");
+        const reviewActions = document.getElementById("review-actions");
+
+        statusEl.textContent = "Loading account...";
+
+        const res = await fetch(`${apiBase}/user/init`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        console.log("/user/init response:", data);
+        debugEl.textContent +=
+          "\n\n/user/init status: " + res.status +
+          "\n/user/init body: " + JSON.stringify(data, null, 2);
+
+        if (!res.ok) {
+          statusEl.textContent =
+            "Error: " + (data.error || res.status);
+          subscriptionBadge.textContent = "Error";
+          subscriptionBadge.classList.add("inactive");
+          return;
+        }
+
+        const hasApiKey = !!data.has_api_key;
+        const hasSpec = !!data.has_review_spec; // from backend
+
+        if (data.subscription_status !== "active") {
+          statusEl.textContent =
+            "Subscription inactive. Click below to start your £5/mo subscription.";
+          subscribeBtn.style.display = "inline-flex";
+          apiKeyBtn.style.display = "none";
+          revokeBtn.style.display = "none";
+          apiKeyDisplay.textContent = "You’ll see your API key here once subscribed.";
+          reviewSection.style.display = "block";
+
+          subscriptionBadge.textContent = "Inactive";
+          subscriptionBadge.classList.add("inactive");
+        } else {
+          statusEl.textContent = "Subscription active.";
+          subscribeBtn.style.display = "none";
+          apiKeyBtn.style.display = "inline-flex";
+
+          subscriptionBadge.textContent = "Active";
+          subscriptionBadge.classList.remove("inactive");
+
+          if (hasApiKey) {
+            apiKeyBtn.textContent = "Show API Key";
+            revokeBtn.style.display = "inline-flex";
+          } else {
+            apiKeyBtn.textContent = "Generate API Key";
+            revokeBtn.style.display = "none";
+            apiKeyDisplay.textContent = "Generate an API key to connect your Chrome extension.";
+          }
+
+          // show entries + review sections once user is active
+          if (window._showAdvancedSections) {
+            window._showAdvancedSections();
+          }
+
+          // Control review section based on whether a spec exists
+          if (hasSpec) {
+            reviewSpecStatus.textContent =
+              "Specification uploaded. You can generate a performance review below.";
+            specUploadContainer.style.display = "none";
+            reviewActions.style.display = "block";
+          } else {
+            reviewSpecStatus.textContent =
+              "You haven't added your levels & expectations specification yet. Paste it below to enable performance review generation.";
+            specUploadContainer.style.display = "block";
+            reviewActions.style.display = "none";
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
