@@ -68,6 +68,9 @@
         <button id="generate-review-btn">
           Generate performance review
         </button>
+        <button id="regenerate-review-btn" style="margin-left: 8px;">
+          Regenerate with latest entries
+        </button>
       </div>
 
       <pre id="review-output" style="margin-top: 16px; white-space: pre-wrap;"></pre>
@@ -116,6 +119,7 @@
         const saveSpecBtn = document.getElementById("save-spec-btn");
         const reviewActions = document.getElementById("review-actions");
         const generateReviewBtn = document.getElementById("generate-review-btn");
+        const regenerateReviewBtn = document.getElementById("regenerate-review-btn");
         const reviewOutput = document.getElementById("review-output");
 
         const { idToken, billing } = parseHash();
@@ -310,7 +314,29 @@
           await loadEntriesPage(token, true);
         });
 
-        // Generate performance review
+        // Helper to render review result (handles cached flag + timestamp)
+        function renderReview(data) {
+          const text = data.review_text || "(No review text returned)";
+          const cached = data.cached ? " (cached)" : "";
+          const ts = data.generated_at ? `Generated at: ${data.generated_at}` : "";
+          let header = "";
+
+          if (ts && cached) {
+            header = `${ts} • from cache`;
+          } else if (ts) {
+            header = ts;
+          } else if (cached) {
+            header = "from cache";
+          }
+
+          if (header) {
+            reviewOutput.textContent = header + "\n\n" + text;
+          } else {
+            reviewOutput.textContent = text;
+          }
+        }
+
+        // Generate performance review (uses cache if available)
         generateReviewBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
@@ -335,11 +361,45 @@
 
           if (!res.ok) {
             reviewOutput.textContent =
-              "Error generating review: " + (data.error || res.status);
+              "Error generating review: " + (data.error || res.status) +
+              (data.details ? "\n\n" + data.details : "");
             return;
           }
 
-          reviewOutput.textContent = data.review_text || "(No review text returned)";
+          renderReview(data);
+        });
+
+        // Regenerate performance review (force fresh AI + refresh cache)
+        regenerateReviewBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) {
+            alert("No token found, please sign in again.");
+            return;
+          }
+
+          reviewOutput.textContent = "Regenerating performance review with latest entries...";
+          const year = new Date().getFullYear();
+
+          const res = await fetch(`${apiBase}/performance-review`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ year, force_regen: true }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+          console.log("/performance-review (force_regen) response:", data);
+
+          if (!res.ok) {
+            reviewOutput.textContent =
+              "Error regenerating review: " + (data.error || res.status) +
+              (data.details ? "\n\n" + data.details : "");
+            return;
+          }
+
+          renderReview(data);
         });
 
         async function loadEntriesPage(token, isNext) {
@@ -531,7 +591,7 @@
         }
 
         const hasApiKey = !!data.has_api_key;
-        const hasSpec = !!data.has_review_spec; // <--- new from backend
+        const hasSpec = !!data.has_review_spec; // from backend
 
         if (data.subscription_status !== "active") {
           statusEl.textContent =
