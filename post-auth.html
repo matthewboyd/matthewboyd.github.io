@@ -4,6 +4,15 @@
     <meta charset="utf-8" />
     <title>Your RapidReviewer Account</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Shared font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
       :root {
         --bg-dark: #020617;
@@ -15,20 +24,45 @@
         --shadow-soft: 0 24px 60px rgba(15,23,42,0.75);
       }
 
-      * {
+      /* Small reset */
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
       }
 
-      body {
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body,
+      h1,
+      h2,
+      h3,
+      p {
         margin: 0;
+      }
+
+      button {
+        font: inherit;
+        background: none;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      body {
         min-height: 100vh;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          "Segoe UI", sans-serif;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "SF Pro Text", "Segoe UI", sans-serif;
         background:
           radial-gradient(circle at top left, #111827 0, transparent 50%),
           radial-gradient(circle at bottom right, #020617 0, transparent 55%),
           #020617;
         color: var(--text-main);
+        margin: 0;
       }
 
       .app {
@@ -51,19 +85,11 @@
         gap: 10px;
       }
 
-      .logo-mark {
+      .brand-logo-img {
         width: 32px;
         height: 32px;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 10px 24px rgba(15,23,42,0.8);
-        flex-shrink: 0;
-      }
-
-      .logo-mark img {
-        width: 100%;
-        height: 100%;
-        display: block;
+        border-radius: 14px;
+        box-shadow: 0 14px 35px rgba(79,70,229,0.7);
       }
 
       .brand-text-main {
@@ -267,21 +293,16 @@
         margin-bottom: 6px;
       }
 
-      /* Small hero image inside review card */
-      .review-hero {
-        margin-top: 12px;
-        border-radius: 12px;
+      /* Hero banner on post-auth */
+      .hero-banner {
+        margin-bottom: 18px;
+        border-radius: 16px;
         overflow: hidden;
-        border: 1px solid rgba(148,163,184,0.35);
+        border: 1px solid rgba(148,163,184,0.4);
+        box-shadow: 0 18px 50px rgba(15,23,42,0.8);
       }
 
-      .review-hero img {
-        width: 100%;
-        height: auto;
-        display: block;
-      }
-
-      /* Overlay for "How to connect extension" */
+      /* How-to overlay */
       .howto-overlay {
         position: fixed;
         inset: 0;
@@ -379,10 +400,11 @@
     <div class="app">
       <header class="app-header">
         <div class="brand">
-          <div class="logo-mark">
-            <!-- Small rocket logo -->
-            <img src="rapid-rocket-logo.png" alt="RapidReviewer logo" />
-          </div>
+          <img
+            src="rapid-rocket-logo.png"
+            alt="RapidReviewer rocket logo"
+            class="brand-logo-img"
+          />
           <div>
             <div class="brand-text-main">RapidReviewer.io</div>
             <div class="brand-text-sub">Your GitHub → performance review bridge</div>
@@ -412,7 +434,7 @@
 
           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
             <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
-              Start £0.99/month subscription
+              Start £5/month subscription
             </button>
 
             <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
@@ -460,8 +482,15 @@
           </div>
         </section>
 
-        <!-- Right column: spec + performance review -->
+        <!-- Right column: hero + spec + performance review -->
         <section id="review-section" class="card">
+          <div class="hero-banner">
+            <img
+              src="rapidreviewer-hero.png"
+              alt="RapidReviewer hero"
+            />
+          </div>
+
           <div class="card-header">
             <div>
               <div class="card-title">Performance review generator</div>
@@ -469,11 +498,6 @@
                 Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
               </div>
             </div>
-          </div>
-
-          <!-- Small hero image -->
-          <div class="review-hero">
-            <img src="rapidreviewer-hero.png" alt="RapidReviewer hero banner" />
           </div>
 
           <p id="review-spec-status"></p>
@@ -904,7 +928,7 @@ Your AI-generated performance review will appear here after you click "Generate 
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`,
             },
-            body: JSON.stringify({ year, force_regen: True }),
+            body: JSON.stringify({ year, force_regen: true }),
           });
 
           const data = await res.json().catch(() => ({}));
@@ -1106,7 +1130,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         if (data.subscription_status !== "active") {
           statusEl.textContent =
-            "Subscription inactive. Click below to start your £0.99/mo subscription.";
+            "Subscription inactive. Click below to start your £5/mo subscription.";
           subscribeBtn.style.display = "inline-flex";
           apiKeyBtn.style.display = "none";
           revokeBtn.style.display = "none";
