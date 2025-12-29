@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>RapidReviewer.io – Turn PRs into performance-ready evidence</title>
+    <title>RapidReviewer.io – PR AI Evidence Logger</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       :root {
@@ -84,21 +84,20 @@
       .logo-mark {
         width: 32px;
         height: 32px;
-        border-radius: 12px;
+        border-radius: 10px;
         overflow: hidden;
+        box-shadow: 0 8px 18px rgba(15,23,42,0.8);
         flex-shrink: 0;
       }
 
-      .logo-img {
+      .logo-mark img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        border-radius: inherit;
         display: block;
       }
 
       .logo-text {
-        font-size: 13px;
+        font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 0.18em;
         color: var(--text-muted);
@@ -215,7 +214,7 @@
         box-shadow: 0 18px 45px rgba(15,23,42,0.85);
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
       }
 
       .side-header {
@@ -238,16 +237,23 @@
         border: 1px solid rgba(22,163,74,0.45);
       }
 
-      .hero-image {
-        width: 100%;
+      .hero-image-wrapper {
         border-radius: 14px;
+        overflow: hidden;
         border: 1px solid rgba(148,163,184,0.4);
-        display: block;
+        background: rgba(15,23,42,0.9);
       }
 
-      .side-caption {
+      .hero-image-wrapper img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .sub-footnote {
         font-size: 11px;
         color: var(--text-muted);
+        margin-top: 4px;
       }
 
       @media (max-width: 800px) {
@@ -268,12 +274,7 @@
         <section class="hero">
           <div class="logo-row">
             <div class="logo-mark">
-              <!-- Update src if your logo file has a different name/path -->
-              <img
-                src="rapidreviewer-logo-mark.png"
-                alt="RapidReviewer logo"
-                class="logo-img"
-              />
+              <img src="rapid-rocket-logo.png" alt="RapidReviewer logo" />
             </div>
             <div>
               <div class="logo-text">RapidReviewer.io</div>
@@ -291,17 +292,17 @@
           </h1>
 
           <p class="tagline">
-            Every time you merge or approve a PR, RapidReviewer logs a short summary and
-            links it to your performance rubric — so review season becomes a screenshot,
-            not a scramble.
+            Every time you merge or approve a PR, we capture a short summary
+            and sync it into your personal PR log — ready for promotion packs,
+            calibration, and self-reviews.
           </p>
 
           <div class="hero-points">
             <div class="pill">
-              <strong>1-click logging</strong> from GitHub
+              <strong>1-click</strong> GitHub comments are saved
             </div>
             <div class="pill">
-              <strong>AI-crafted</strong> performance narratives in minutes
+              <strong>AI-ready</strong> performance reviews in minutes
             </div>
           </div>
 
@@ -311,28 +312,27 @@
               <span class="arrow">↗</span>
             </button>
             <div class="cta-note">
-              <strong>£5/month</strong> • cancel anytime
+              <strong>£0.99/month</strong> • cancel anytime
             </div>
           </div>
         </section>
 
-        <!-- Right: Hero image / visual -->
+        <!-- Right: Hero banner card -->
         <aside class="side-card">
           <div class="side-header">
-            <div class="side-title">From PRs → review-ready proof</div>
+            <div class="side-title">From PRs to proof</div>
             <div class="side-badge">Live preview</div>
           </div>
 
-          <!-- Use your social promo / hero graphic here -->
-          <img
-            src="rapidreviewer-hero.png"
-            alt="RapidReviewer – Your GitHub PRs to promo-ready evidence"
-            class="hero-image"
-          />
+          <div class="hero-image-wrapper">
+            <img
+              src="rapidreviewer-hero.png"
+              alt="RapidReviewer hero banner"
+            />
+          </div>
 
-          <p class="side-caption">
-            Your GitHub PR history on the left. Clear, manager-friendly review
-            narratives on the right — generated from your real work.
+          <p class="sub-footnote">
+            Works with GitHub. Your day-to-day merges become your next promotion story.
           </p>
         </aside>
       </div>
