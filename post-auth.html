@@ -55,21 +55,18 @@
         width: 30px;
         height: 30px;
         border-radius: 12px;
-        background:
-          conic-gradient(from 180deg at 50% 50%, #6366f1, #ec4899, #f97316, #22c55e, #6366f1);
-        padding: 1px;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+        flex-shrink: 0;
       }
 
-      .logo-inner {
+      .logo-img {
         width: 100%;
         height: 100%;
-        border-radius: 11px;
-        background: #020617;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: 700;
+        object-fit: cover;
+        border-radius: inherit;
+        display: block;
       }
 
       .brand-text-main {
@@ -273,6 +270,15 @@
         margin-bottom: 6px;
       }
 
+      /* Right card hero image */
+      .review-hero {
+        width: 100%;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(148,163,184,0.35);
+        display: block;
+      }
+
       /* Overlay for "How to connect extension" */
       .howto-overlay {
         position: fixed;
@@ -372,11 +378,16 @@
       <header class="app-header">
         <div class="brand">
           <div class="logo-mark">
-            <div class="logo-inner">PR</div>
+            <!-- Update this src to your rocket logo image -->
+            <img
+              src="rapidreviewer-logo-mark.png"
+              alt="RapidReviewer logo"
+              class="logo-img"
+            />
           </div>
           <div>
-            <div class="brand-text-main">PR AI Evidence Logger</div>
-            <div class="brand-text-sub">Your GitHub → performance review bridge</div>
+            <div class="brand-text-main">RapidReviewer.io</div>
+            <div class="brand-text-sub">Turn GitHub PRs into promo-ready evidence</div>
           </div>
         </div>
         <div class="app-pill">
@@ -453,6 +464,13 @@
 
         <!-- Right column: spec + performance review -->
         <section id="review-section" class="card">
+          <!-- Hero promo image using your ad graphic -->
+          <img
+            src="rapidreviewer-hero.png"
+            alt="RapidReviewer – Your GitHub PRs to promo-ready evidence"
+            class="review-hero"
+          />
+
           <div class="card-header">
             <div>
               <div class="card-title">Performance review generator</div>
