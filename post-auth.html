@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Your PR Logger Account</title>
+    <title>Your RapidReviewer Account</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       :root {
@@ -52,20 +52,17 @@
       }
 
       .logo-mark {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         border-radius: 12px;
-        padding: 0;
-        background: transparent;
         overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15,23,42,0.8);
         flex-shrink: 0;
       }
 
-      .logo-img {
+      .logo-mark img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        border-radius: inherit;
         display: block;
       }
 
@@ -270,12 +267,17 @@
         margin-bottom: 6px;
       }
 
-      /* Right card hero image */
+      /* Small hero image inside review card */
       .review-hero {
-        width: 100%;
-        border-radius: 14px;
-        margin-bottom: 12px;
+        margin-top: 12px;
+        border-radius: 12px;
+        overflow: hidden;
         border: 1px solid rgba(148,163,184,0.35);
+      }
+
+      .review-hero img {
+        width: 100%;
+        height: auto;
         display: block;
       }
 
@@ -378,16 +380,12 @@
       <header class="app-header">
         <div class="brand">
           <div class="logo-mark">
-            <!-- Update this src to your rocket logo image -->
-            <img
-              src="rapidreviewer-logo-mark.png"
-              alt="RapidReviewer logo"
-              class="logo-img"
-            />
+            <!-- Small rocket logo -->
+            <img src="rapid-rocket-logo.png" alt="RapidReviewer logo" />
           </div>
           <div>
             <div class="brand-text-main">RapidReviewer.io</div>
-            <div class="brand-text-sub">Turn GitHub PRs into promo-ready evidence</div>
+            <div class="brand-text-sub">Your GitHub → performance review bridge</div>
           </div>
         </div>
         <div class="app-pill">
@@ -414,7 +412,7 @@
 
           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
             <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
-              Start £5/month subscription
+              Start £0.99/month subscription
             </button>
 
             <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
@@ -464,13 +462,6 @@
 
         <!-- Right column: spec + performance review -->
         <section id="review-section" class="card">
-          <!-- Hero promo image using your ad graphic -->
-          <img
-            src="rapidreviewer-hero.png"
-            alt="RapidReviewer – Your GitHub PRs to promo-ready evidence"
-            class="review-hero"
-          />
-
           <div class="card-header">
             <div>
               <div class="card-title">Performance review generator</div>
@@ -478,6 +469,11 @@
                 Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
               </div>
             </div>
+          </div>
+
+          <!-- Small hero image -->
+          <div class="review-hero">
+            <img src="rapidreviewer-hero.png" alt="RapidReviewer hero banner" />
           </div>
 
           <p id="review-spec-status"></p>
@@ -908,7 +904,7 @@ Your AI-generated performance review will appear here after you click "Generate 
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`,
             },
-            body: JSON.stringify({ year, force_regen: true }),
+            body: JSON.stringify({ year, force_regen: True }),
           });
 
           const data = await res.json().catch(() => ({}));
@@ -1110,7 +1106,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         if (data.subscription_status !== "active") {
           statusEl.textContent =
-            "Subscription inactive. Click below to start your £5/mo subscription.";
+            "Subscription inactive. Click below to start your £0.99/mo subscription.";
           subscribeBtn.style.display = "inline-flex";
           apiKeyBtn.style.display = "none";
           revokeBtn.style.display = "none";
