@@ -1,552 +1,563 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Your RapidReviewer Account</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <!-- Shared font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <style>
-      :root {
-        --bg-dark: #020617;
-        --accent: #6366f1;
-        --accent-soft: rgba(99,102,241,0.18);
-        --text-main: #f9fafb;
-        --text-muted: #9ca3af;
-        --border-subtle: rgba(148,163,184,0.35);
-        --shadow-soft: 0 24px 60px rgba(15,23,42,0.75);
-      }
-
-      /* Small reset */
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      html {
-        -webkit-text-size-adjust: 100%;
-      }
-
-      body,
-      h1,
-      h2,
-      h3,
-      p {
-        margin: 0;
-      }
-
-      button {
-        font: inherit;
-        background: none;
-      }
-
-      img {
-        max-width: 100%;
-        display: block;
-      }
-
-      body {
-        min-height: 100vh;
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-          "SF Pro Text", "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at top left, #111827 0, transparent 50%),
-          radial-gradient(circle at bottom right, #020617 0, transparent 55%),
-          #020617;
-        color: var(--text-main);
-        margin: 0;
-      }
-
-      .app {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 24px 16px 40px;
-      }
-
-      .app-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        gap: 12px;
-      }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .brand-logo-img {
-        width: 32px;
-        height: 32px;
-        border-radius: 14px;
-        box-shadow: 0 14px 35px rgba(79,70,229,0.7);
-      }
-
-      .brand-text-main {
-        font-size: 16px;
-        font-weight: 600;
-      }
-
-      .brand-text-sub {
-        font-size: 12px;
-        color: var(--text-muted);
-      }
-
-      .app-pill {
-        font-size: 11px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--accent-soft);
-        color: var(--accent);
-        background: rgba(15,23,42,0.9);
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-        gap: 16px;
-        align-items: flex-start;
-      }
-
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-
-      .card {
-        border-radius: 18px;
-        background: radial-gradient(circle at top left, #020617, #020617 24%, #020617 100%);
-        border: 1px solid var(--border-subtle);
-        box-shadow: var(--shadow-soft);
-        padding: 16px 16px 16px;
-      }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 12px;
-      }
-
-      .card-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
-      }
-
-      .status-badge {
-        font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(22,163,74,0.5);
-        background: rgba(22,163,74,0.16);
-        color: #bbf7d0;
-      }
-
-      .status-badge.inactive {
-        border-color: rgba(248,113,113,0.6);
-        background: rgba(248,113,113,0.14);
-        color: #fecaca;
-      }
-
-      #status {
-        font-size: 13px;
-        color: var(--text-main);
-        margin-bottom: 10px;
-      }
-
-      .btn {
-        border-radius: 999px;
-        padding: 8px 14px;
-        border: 1px solid transparent;
-        background: rgba(15,23,42,0.95);
-        color: var(--text-main);
-        font-size: 13px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #6366f1, #ec4899);
-        border-color: transparent;
-        box-shadow: 0 16px 40px rgba(79,70,229,0.55);
-      }
-
-      .btn-ghost {
-        border-color: rgba(148,163,184,0.6);
-      }
-
-      .btn-secondary {
-        background: rgba(15,23,42,0.95);
-        border-color: rgba(148,163,184,0.6);
-      }
-
-      .btn-small {
-        padding: 5px 9px;
-        font-size: 11px;
-      }
-
-      .pill-inline {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 9px;
-        border-radius: 999px;
-        background: rgba(15,23,42,1);
-        border: 1px solid rgba(148,163,184,0.35);
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      pre {
-        background: rgba(15,23,42,0.9);
-        border-radius: 10px;
-        border: 1px solid rgba(148,163,184,0.4);
-        padding: 10px 12px;
-        font-size: 11px;
-        overflow-x: auto;
-      }
-
-      #api-key-display {
-        margin-top: 12px;
-        display: none;
-      }
-
-      textarea {
-        border-radius: 10px;
-        border: 1px solid rgba(148,163,184,0.45);
-        background: rgba(15,23,42,0.95);
-        color: var(--text-main);
-        font-size: 13px;
-        padding: 10px 12px;
-        resize: vertical;
-        width: 100%;
-        max-width: 100%;
-      }
-
-      textarea:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(99,102,241,0.6);
-      }
-
-      textarea::placeholder {
-        color: rgba(148,163,184,0.9);
-      }
-
-      hr {
-        border: none;
-        border-top: 1px solid rgba(148,163,184,0.25);
-        margin: 18px 0;
-      }
-
-      #entries-list {
-        margin-top: 8px;
-        list-style-type: none;
-        padding-left: 0;
-      }
-
-      #entries-list li {
-        font-size: 12px;
-      }
-
-      #entries-list li a {
-        color: var(--text-main);
-      }
-
-      #entries-controls {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 6px;
-      }
-
-      #review-output {
-        margin-top: 14px;
-        max-height: 420px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-      }
-
-      .section-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        margin-bottom: 6px;
-      }
-
-      /* Hero banner on post-auth */
-      .hero-banner {
-        margin-bottom: 18px;
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid rgba(148,163,184,0.4);
-        box-shadow: 0 18px 50px rgba(15,23,42,0.8);
-      }
-
-      /* How-to overlay */
-      .howto-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15,23,42,0.92);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 50;
-        padding: 16px;
-      }
-
-      .howto-card {
-        max-width: 540px;
-        width: 100%;
-        background: radial-gradient(circle at top left, #020617, #020617 24%, #020617 100%);
-        border-radius: 20px;
-        border: 1px solid rgba(148,163,184,0.35);
-        box-shadow: var(--shadow-soft);
-        padding: 18px 18px 16px;
-      }
-
-      .howto-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: flex-start;
-        margin-bottom: 10px;
-      }
-
-      .howto-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .howto-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
-      }
-
-      .howto-close {
-        border: none;
-        background: transparent;
-        color: var(--text-muted);
-        font-size: 18px;
-        cursor: pointer;
-      }
-
-      .step-list {
-        list-style: none;
-        padding-left: 0;
-        margin: 8px 0 10px;
-      }
-
-      .step-item {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-        align-items: flex-start;
-      }
-
-      .step-badge {
-        width: 22px;
-        height: 22px;
-        border-radius: 999px;
-        background: rgba(37,99,235,0.12);
-        border: 1px solid rgba(129,140,248,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        color: #c7d2fe;
-        flex-shrink: 0;
-      }
-
-      .step-body {
-        font-size: 12px;
-        color: var(--text-main);
-      }
-
-      .step-body strong {
-        color: #e5e7eb;
-      }
-
-      .howto-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 6px;
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="app">
-      <header class="app-header">
-        <div class="brand">
-          <img
-            src="rapid-rocket-logo.png"
-            alt="RapidReviewer rocket logo"
-            class="brand-logo-img"
-          />
-          <div>
-            <div class="brand-text-main">RapidReviewer.io</div>
-            <div class="brand-text-sub">Your GitHub → performance review bridge</div>
-          </div>
-        </div>
-        <div class="app-pill">
-          Logged in via Cognito · Secure by design
-        </div>
-      </header>
-
-      <div class="grid">
-        <!-- Left column: subscription + API key + entries -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Account & subscription</div>
-              <div class="card-subtitle">
-                Manage billing, API keys and see your captured PR entries.
-              </div>
-            </div>
-            <span id="subscription-badge" class="status-badge inactive">
-              Checking…
-            </span>
-          </div>
-
-          <div id="status"></div>
-
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
-              Start £5/month subscription
-            </button>
-
-            <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
-              Generate / Show API Key
-            </button>
-
-            <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
-              Revoke API Key
-            </button>
-
-            <button id="howto-extension-btn" class="btn btn-ghost btn-small" style="display:none;">
-              How to connect the Chrome extension
-            </button>
-          </div>
-
-          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-            Use your API key in the Chrome extension to log PR activity from GitHub.
-          </div>
-
-          <div class="section-label">API key</div>
-          <pre id="api-key-display"></pre>
-
-          <hr />
-
-          <div id="entries-section" style="display: none;">
-            <div class="card-header" style="margin-bottom: 8px; padding: 0;">
-              <div>
-                <div class="card-title" style="font-size: 14px;">Your PR entries</div>
-                <div class="card-subtitle">
-                  Choose any date range, then load entries (20 per page).
-                </div>
-              </div>
-            </div>
-
-            <!-- ✅ NEW: Date range picker -->
-            <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-top:10px;">
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <label style="font-size:11px; color: var(--text-muted);">Start</label>
-                <input
-                  id="entries-start"
-                  type="date"
-                  class="btn btn-secondary"
-                  style="border-radius:10px; padding:8px 10px;"
-                />
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <label style="font-size:11px; color: var(--text-muted);">End</label>
-                <input
-                  id="entries-end"
-                  type="date"
-                  class="btn btn-secondary"
-                  style="border-radius:10px; padding:8px 10px;"
-                />
-              </div>
-
-              <button id="apply-range-btn" class="btn btn-ghost btn-small">Apply range</button>
-              <button id="clear-range-btn" class="btn btn-ghost btn-small">Clear</button>
-            </div>
-
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-top:10px;">
-              <button id="show-entries-btn" class="btn btn-secondary btn-small">
-                Load entries (20 per page)
-              </button>
-              <div id="entries-controls" style="display:none;">
-                <button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
-              </div>
-            </div>
-
-            <ul id="entries-list" style="margin-top: 10px;"></ul>
-          </div>
-        </section>
-
-        <!-- Right column: hero + spec + performance review -->
-        <section id="review-section" class="card">
-          <div class="hero-banner">
-            <img
-              src="rapidreviewer-hero.png"
-              alt="RapidReviewer hero"
-            />
-          </div>
-
-          <div class="card-header">
-            <div>
-              <div class="card-title">Performance review generator</div>
-              <div class="card-subtitle">
-                Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
-              </div>
-            </div>
-          </div>
-
-          <p id="review-spec-status"></p>
-
-          <!-- Button to upload/replace spec when one already exists -->
-          <button
-            id="edit-spec-btn"
-            class="btn btn-ghost btn-small"
-            style="display:none; margin-bottom:8px;"
-          >
-            Upload / replace specification
-          </button>
-
-          <!-- Step 1: spec -->
-          <div id="spec-upload-container" style="display: none; margin-top: 8px;">
-            <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
-              Paste your company’s levels &amp; expectations / performance rubric below.
-              This box is fully editable — we’ll store it privately and use it to guide your review.
-            </p>
-            <textarea
-              id="spec-text"
-              rows="8"
-              placeholder="Example:
+<head>
+<meta charset="utf-8" />
+<title>RapidReviewer.io – Your account</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root {
+--bg-dark: #020617;
+--accent: #6366f1;
+--accent-soft: rgba(99,102,241,0.18);
+--text-main: #f9fafb;
+--text-muted: #9ca3af;
+--border-subtle: rgba(148,163,184,0.35);
+--shadow-soft: 0 24px 60px rgba(15,23,42,0.75);
+}
+
+* {
+box-sizing: border-box;
+}
+
+body {
+margin: 0;
+min-height: 100vh;
+font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+"Segoe UI", sans-serif;
+background:
+radial-gradient(circle at top left, #111827 0, transparent 50%),
+radial-gradient(circle at bottom right, #020617 0, transparent 55%),
+#020617;
+color: var(--text-main);
+}
+
+.app {
+max-width: 1100px;
+margin: 0 auto;
+padding: 24px 16px 40px;
+}
+
+.app-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+gap: 12px;
+}
+
+.brand {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.brand-logo {
+width: 34px;
+height: 34px;
+border-radius: 12px;
+display: block;
+}
+
+.brand-text-main {
+font-size: 16px;
+font-weight: 600;
+}
+
+.brand-text-sub {
+font-size: 12px;
+color: var(--text-muted);
+}
+
+.app-pill {
+font-size: 11px;
+padding: 4px 10px;
+border-radius: 999px;
+border: 1px solid var(--accent-soft);
+color: var(--accent);
+background: rgba(15,23,42,0.9);
+}
+
+.grid {
+display: grid;
+grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+gap: 16px;
+align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+.grid {
+grid-template-columns: minmax(0, 1fr);
+}
+}
+
+.card {
+border-radius: 18px;
+background: radial-gradient(circle at top left, #020617, #020617 24%, #020617 100%);
+border: 1px solid var(--border-subtle);
+box-shadow: var(--shadow-soft);
+padding: 16px 16px 16px;
+}
+
+.card-header {
+display: flex;
+justify-content: space-between;
+align-items: baseline;
+margin-bottom: 12px;
+}
+
+.card-title {
+font-size: 15px;
+font-weight: 600;
+}
+
+.card-subtitle {
+font-size: 12px;
+color: var(--text-muted);
+}
+
+.status-badge {
+font-size: 11px;
+padding: 3px 8px;
+border-radius: 999px;
+border: 1px solid rgba(22,163,74,0.5);
+background: rgba(22,163,74,0.16);
+color: #bbf7d0;
+}
+
+.status-badge.inactive {
+border-color: rgba(248,113,113,0.6);
+background: rgba(248,113,113,0.14);
+color: #fecaca;
+}
+
+#status {
+font-size: 13px;
+color: var(--text-main);
+margin-bottom: 10px;
+}
+
+.btn {
+border-radius: 999px;
+padding: 8px 14px;
+border: 1px solid transparent;
+background: rgba(15,23,42,0.95);
+color: var(--text-main);
+font-size: 13px;
+cursor: pointer;
+display: inline-flex;
+align-items: center;
+gap: 6px;
+}
+
+.btn-primary {
+background: linear-gradient(135deg, #6366f1, #ec4899);
+border-color: transparent;
+box-shadow: 0 16px 40px rgba(79,70,229,0.55);
+}
+
+.btn-ghost {
+border-color: rgba(148,163,184,0.6);
+}
+
+.btn-secondary {
+background: rgba(15,23,42,0.95);
+border-color: rgba(148,163,184,0.6);
+}
+
+.btn-small {
+padding: 5px 9px;
+font-size: 11px;
+}
+
+.pill-inline {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 4px 9px;
+border-radius: 999px;
+background: rgba(15,23,42,1);
+border: 1px solid rgba(148,163,184,0.35);
+font-size: 11px;
+color: var(--text-muted);
+}
+
+pre {
+background: rgba(15,23,42,0.9);
+border-radius: 10px;
+border: 1px solid rgba(148,163,184,0.4);
+padding: 10px 12px;
+font-size: 11px;
+overflow-x: auto;
+}
+
+#api-key-display {
+margin-top: 12px;
+display: none;
+}
+
+textarea {
+border-radius: 10px;
+border: 1px solid rgba(148,163,184,0.45);
+background: rgba(15,23,42,0.95);
+color: var(--text-main);
+font-size: 13px;
+padding: 10px 12px;
+resize: vertical;
+width: 100%;
+max-width: 100%;
+}
+
+textarea:focus {
+outline: none;
+border-color: var(--accent);
+box-shadow: 0 0 0 1px rgba(99,102,241,0.6);
+}
+
+textarea::placeholder {
+color: rgba(148,163,184,0.9);
+}
+
+hr {
+border: none;
+border-top: 1px solid rgba(148,163,184,0.25);
+margin: 18px 0;
+}
+
+#entries-list {
+margin-top: 8px;
+list-style-type: none;
+padding-left: 0;
+}
+
+#entries-list li {
+font-size: 12px;
+}
+
+#entries-list li a {
+color: var(--text-main);
+}
+
+#entries-controls {
+display: flex;
+justify-content: flex-end;
+gap: 8px;
+margin-top: 6px;
+}
+
+#review-output {
+margin-top: 14px;
+max-height: 420px;
+overflow-y: auto;
+white-space: pre-wrap;
+}
+
+.section-label {
+font-size: 11px;
+color: var(--text-muted);
+text-transform: uppercase;
+letter-spacing: 0.16em;
+margin-bottom: 6px;
+}
+
+/* Date range controls */
+.date-range {
+margin-top: 6px;
+margin-bottom: 8px;
+}
+
+.date-row {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+}
+
+.date-group {
+display: flex;
+flex-direction: column;
+gap: 3px;
+font-size: 11px;
+}
+
+.date-group label {
+color: var(--text-muted);
+}
+
+.date-group input[type="date"] {
+border-radius: 8px;
+border: 1px solid rgba(148,163,184,0.45);
+background: rgba(15,23,42,0.95);
+color: var(--text-main);
+font-size: 12px;
+padding: 5px 8px;
+}
+
+.date-group input[type="date"]:focus {
+outline: none;
+border-color: var(--accent);
+}
+
+.date-helper {
+font-size: 11px;
+color: var(--text-muted);
+margin-top: 4px;
+}
+
+/* Overlay for "How to connect extension" */
+.howto-overlay {
+position: fixed;
+inset: 0;
+background: rgba(15,23,42,0.92);
+display: none;
+align-items: center;
+justify-content: center;
+z-index: 50;
+padding: 16px;
+}
+
+.howto-card {
+max-width: 540px;
+width: 100%;
+background: radial-gradient(circle at top left, #020617, #020617 24%, #020617 100%);
+border-radius: 20px;
+border: 1px solid rgba(148,163,184,0.35);
+box-shadow: var(--shadow-soft);
+padding: 18px 18px 16px;
+}
+
+.howto-header {
+display: flex;
+justify-content: space-between;
+gap: 12px;
+align-items: flex-start;
+margin-bottom: 10px;
+}
+
+.howto-title {
+font-size: 15px;
+font-weight: 600;
+}
+
+.howto-subtitle {
+font-size: 12px;
+color: var(--text-muted);
+}
+
+.howto-close {
+border: none;
+background: transparent;
+color: var(--text-muted);
+font-size: 18px;
+cursor: pointer;
+}
+
+.step-list {
+list-style: none;
+padding-left: 0;
+margin: 8px 0 10px;
+}
+
+.step-item {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+align-items: flex-start;
+}
+
+.step-badge {
+width: 22px;
+height: 22px;
+border-radius: 999px;
+background: rgba(37,99,235,0.12);
+border: 1px solid rgba(129,140,248,0.7);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 12px;
+color: #c7d2fe;
+flex-shrink: 0;
+}
+
+.step-body {
+font-size: 12px;
+color: var(--text-main);
+}
+
+.step-body strong {
+color: #e5e7eb;
+}
+
+.howto-footer {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-top: 6px;
+font-size: 11px;
+color: var(--text-muted);
+}
+
+/* History list */
+#history-list {
+list-style: none;
+padding-left: 0;
+margin-top: 8px;
+}
+
+#history-list li {
+font-size: 12px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 8px;
+margin-bottom: 6px;
+}
+
+#history-list .history-meta {
+flex: 1 1 auto;
+}
+
+#history-list .history-meta strong {
+font-weight: 600;
+}
+
+#history-list .history-meta span {
+color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="app-header">
+<div class="brand">
+<img
+src="rapid-rocket-logo.png"
+alt="RapidReviewer logo"
+class="brand-logo"
+/>
+<div>
+<div class="brand-text-main">RapidReviewer.io</div>
+<div class="brand-text-sub">Your GitHub → performance review bridge</div>
+</div>
+</div>
+<div class="app-pill">
+Logged in via Cognito · Secure by design
+</div>
+</header>
+
+<div class="grid">
+<!-- Left column: subscription + API key + entries -->
+<section class="card">
+<div class="card-header">
+<div>
+<div class="card-title">Account & subscription</div>
+<div class="card-subtitle">
+Manage billing, API keys and see your captured PR entries.
+</div>
+</div>
+<span id="subscription-badge" class="status-badge inactive">
+Checking…
+</span>
+</div>
+
+<div id="status"></div>
+
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+<button id="subscribe-btn" class="btn btn-primary" style="display:none;">
+Start £0.99/month subscription
+</button>
+
+<button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
+Generate / Show API Key
+</button>
+
+<button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
+Revoke API Key
+</button>
+
+<button id="howto-extension-btn" class="btn btn-ghost btn-small" style="display:none;">
+How to connect the Chrome extension
+</button>
+</div>
+
+<div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+Use your API key in the Chrome extension to log PR activity from GitHub.
+</div>
+
+<div class="section-label">API key</div>
+<pre id="api-key-display"></pre>
+
+<hr />
+
+<div id="entries-section" style="display: none;">
+<div class="card-header" style="margin-bottom: 8px; padding: 0;">
+<div>
+<div class="card-title" style="font-size: 14px;">Your PR entries</div>
+<div class="card-subtitle">
+Captured each time you merge or approve a PR.
+</div>
+</div>
+</div>
+
+<div class="date-range">
+<div class="section-label">Date range</div>
+<div class="date-row">
+<div class="date-group">
+<label for="review-start-date">From</label>
+<input type="date" id="review-start-date" />
+</div>
+<div class="date-group">
+<label for="review-end-date">To</label>
+<input type="date" id="review-end-date" />
+</div>
+</div>
+<div class="date-helper">
+If left blank, we'll use the current calendar year.
+</div>
+</div>
+
+<div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
+<button id="show-entries-btn" class="btn btn-secondary btn-small">
+Load entries (20 per page)
+</button>
+<div id="entries-controls" style="display:none;">
+<button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
+</div>
+</div>
+
+<ul id="entries-list" style="margin-top: 10px;"></ul>
+</div>
+</section>
+
+<!-- Right column: spec + performance review -->
+<section id="review-section" class="card">
+<div class="card-header">
+<div>
+<div class="card-title">Performance review generator</div>
+<div class="card-subtitle">
+Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
+</div>
+</div>
+</div>
+
+<p id="review-spec-status"></p>
+
+<!-- Upload/replace spec -->
+<button
+id="edit-spec-btn"
+class="btn btn-ghost btn-small"
+style="display:none; margin-bottom:8px;"
+>
+Upload / replace specification
+</button>
+
+<div id="spec-upload-container" style="display: none; margin-top: 8px;">
+<p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
+Paste your company’s levels &amp; expectations / performance rubric below.
+This box is fully editable — we’ll store it privately and use it to guide your review.
+</p>
+<textarea
+id="spec-text"
+rows="8"
+placeholder="Example:
 L3 Engineer:
 - Delivers scoped features independently.
 - Writes well-tested, maintainable code...
@@ -554,715 +565,802 @@ L3 Engineer:
 L4 Engineer:
 - Owns end-to-end delivery of complex projects...
 (etc.)"
-            ></textarea>
-            <br />
-            <button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
-              Save specification
-            </button>
-          </div>
+></textarea>
+<br />
+<button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
+Save specification
+</button>
+</div>
 
-          <!-- Step 2: generate review -->
-          <div id="review-actions" style="display: none; margin-top: 8px;">
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-              <button id="generate-review-btn" class="btn btn-primary">
-                Generate performance review
-              </button>
-              <button id="regenerate-review-btn" class="btn btn-ghost btn-small">
-                Regenerate with latest entries
-              </button>
-            </div>
-            <div class="pill-inline">
-              Tip: update your spec anytime and regenerate to reflect new expectations.
-            </div>
-          </div>
+<!-- Review date range (uses same inputs as entries) -->
+<div class="date-range" style="margin-top: 12px;">
+<div class="section-label">Review period</div>
+<div class="date-helper">
+We'll use the same date range as your entries above. If empty, we use the current calendar year.
+</div>
+</div>
 
-          <pre id="review-output">
+<!-- Generate review -->
+<div id="review-actions" style="display: none; margin-top: 8px;">
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+<button id="generate-review-btn" class="btn btn-primary">
+Generate performance review
+</button>
+<button id="regenerate-review-btn" class="btn btn-ghost btn-small">
+Regenerate with latest entries
+</button>
+</div>
+<div class="pill-inline">
+Tip: you’re limited to a few generations per month. Update your spec anytime and regenerate to reflect new expectations.
+</div>
+</div>
+
+<pre id="review-output">
 Your AI-generated performance review will appear here after you click "Generate performance review".
-          </pre>
-        </section>
-      </div>
-    </div>
-
-    <!-- How-to overlay -->
-    <div id="howto-overlay" class="howto-overlay">
-      <div class="howto-card">
-        <div class="howto-header">
-          <div>
-            <div class="howto-title">Connect the Chrome extension</div>
-            <div class="howto-subtitle">
-              Follow these steps once you’ve generated your API key.
-            </div>
-          </div>
-          <button id="howto-close-btn" class="howto-close" aria-label="Close">
-            ×
-          </button>
-        </div>
-
-        <ul class="step-list">
-          <li class="step-item">
-            <div class="step-badge">1</div>
-            <div class="step-body">
-              <strong>Open Chrome &amp; find the extension.</strong><br />
-              Install <em>PR AI Evidence Logger</em> from the Chrome Web Store. Then click the
-              <strong>puzzle icon</strong> in your browser toolbar and pin the extension so it’s easy to find.
-            </div>
-          </li>
-          <li class="step-item">
-            <div class="step-badge">2</div>
-            <div class="step-body">
-              <strong>Open the extension settings.</strong><br />
-              Click the extension icon, then click <strong>Options</strong> (or
-              right-click the icon &amp; choose <strong>Options</strong> / <strong>Extension options</strong>).
-              This opens the extension’s settings page.
-            </div>
-          </li>
-          <li class="step-item">
-            <div class="step-badge">3</div>
-            <div class="step-body">
-              <strong>Paste your API key &amp; save.</strong><br />
-              Copy the API key from this page, paste it into the <strong>API Key</strong> field in the
-              extension settings, and click <strong>Save</strong>. From now on, any merge or approval you do on GitHub
-              will be logged automatically.
-            </div>
-          </li>
-        </ul>
-
-        <div class="howto-footer">
-          <span>Tip: you can regenerate or revoke your API key here at any time.</span>
-          <button id="howto-gotit-btn" class="btn btn-primary btn-small">
-            Got it
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
-
-      let entriesNextCursor = null;
-      let lastRenderedMonthKey = null;
-
-      function parseHash() {
-        const raw = window.location.hash.startsWith("#")
-          ? window.location.hash.substring(1)
-          : window.location.hash;
-
-        const params = new URLSearchParams(raw);
-        return {
-          idToken: params.get("id_token"),
-          billing: params.get("billing"),
-        };
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        const statusEl = document.getElementById("status");
-        const subscribeBtn = document.getElementById("subscribe-btn");
-        const apiKeyBtn = document.getElementById("create-api-key-btn");
-        const revokeBtn = document.getElementById("revoke-api-key-btn");
-        const apiKeyDisplay = document.getElementById("api-key-display");
-        const subscriptionBadge = document.getElementById("subscription-badge");
-        const howtoBtn = document.getElementById("howto-extension-btn");
-        const howtoOverlay = document.getElementById("howto-overlay");
-        const howtoCloseBtn = document.getElementById("howto-close-btn");
-        const howtoGotItBtn = document.getElementById("howto-gotit-btn");
-
-        const entriesSection = document.getElementById("entries-section");
-        const showEntriesBtn = document.getElementById("show-entries-btn");
-        const entriesControls = document.getElementById("entries-controls");
-        const nextPageBtn = document.getElementById("next-page-btn");
-        const entriesList = document.getElementById("entries-list");
-
-        // ✅ NEW: date range controls
-        const entriesStartEl = document.getElementById("entries-start");
-        const entriesEndEl = document.getElementById("entries-end");
-        const applyRangeBtn = document.getElementById("apply-range-btn");
-        const clearRangeBtn = document.getElementById("clear-range-btn");
-        let entriesRangeStart = null; // "YYYY-MM-DD"
-        let entriesRangeEnd = null;   // "YYYY-MM-DD"
-
-        const reviewSection = document.getElementById("review-section");
-        const reviewSpecStatus = document.getElementById("review-spec-status");
-        const specUploadContainer = document.getElementById("spec-upload-container");
-        const specText = document.getElementById("spec-text");
-        const saveSpecBtn = document.getElementById("save-spec-btn");
-        const reviewActions = document.getElementById("review-actions");
-        const generateReviewBtn = document.getElementById("generate-review-btn");
-        const regenerateReviewBtn = document.getElementById("regenerate-review-btn");
-        const reviewOutput = document.getElementById("review-output");
-        const editSpecBtn = document.getElementById("edit-spec-btn");
-
-        const { idToken, billing } = parseHash();
-        const storedToken = window.localStorage.getItem("idToken");
-        let tokenToUse = idToken || storedToken || null;
-
-        if (billing === "success") {
-          statusEl.textContent = "Payment complete – checking subscription status…";
-        } else if (billing === "cancel") {
-          statusEl.textContent = "Payment cancelled. You can retry subscription below.";
-        }
-
-        if (idToken) {
-          window.localStorage.setItem("idToken", idToken);
-        }
-
-        if (!tokenToUse) {
-          statusEl.textContent = "No token found. Please sign in again.";
-          subscriptionBadge.textContent = "Not signed in";
-          subscriptionBadge.classList.add("inactive");
-          return;
-        }
-
-        initUser(tokenToUse);
-
-        // --- Button handlers ---
-
-        subscribeBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          const res = await fetch(`${apiBase}/billing/create-checkout-session`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({}),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/billing/create-checkout-session response:", data);
-
-          if (!res.ok) {
-            alert("Error creating checkout session: " + (data.error || res.status));
-            return;
-          }
-
-          window.location = data.checkout_url;
-        });
-
-        apiKeyBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          const res = await fetch(`${apiBase}/apikey`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ action: "get_or_create" }),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/apikey response:", data);
-
-          if (!res.ok) {
-            alert("Error generating API key: " + (data.error || res.status));
-            return;
-          }
-
-          apiKeyDisplay.style.display = "block";
-          apiKeyDisplay.textContent = "API Key (paste into extension):\n" + data.api_key;
-          apiKeyBtn.textContent = "Show API Key";
-          revokeBtn.style.display = "inline-block";
-          howtoBtn.style.display = "inline-block";
-        });
-
-        revokeBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          if (!confirm("Revoke your current API key? Your extension will stop working until you generate a new one.")) {
-            return;
-          }
-
-          const res = await fetch(`${apiBase}/apikey`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ action: "revoke" }),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/apikey revoke response:", data);
-
-          if (!res.ok) {
-            alert("Error revoking API key: " + (data.error || res.status));
-            return;
-          }
-
-          apiKeyDisplay.style.display = "block";
-          apiKeyDisplay.textContent = "API key revoked.";
-          apiKeyBtn.textContent = "Generate / Show API Key";
-          revokeBtn.style.display = "none";
-          howtoBtn.style.display = "none";
-        });
-
-        // How-to overlay handlers
-        function openHowto() {
-          howtoOverlay.style.display = "flex";
-        }
-        function closeHowto() {
-          howtoOverlay.style.display = "none";
-        }
-
-        howtoBtn.addEventListener("click", openHowto);
-        howtoCloseBtn.addEventListener("click", closeHowto);
-        howtoGotItBtn.addEventListener("click", closeHowto);
-        howtoOverlay.addEventListener("click", (e) => {
-          if (e.target === howtoOverlay) {
-            closeHowto();
-          }
-        });
-
-        saveSpecBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          const text = (specText.value || "").trim();
-          if (!text) {
-            alert("Please paste your specification before saving.");
-            return;
-          }
-
-          const res = await fetch(`${apiBase}/specs`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ spec_text: text }),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/spec response:", data);
-
-          if (!res.ok) {
-            alert("Error saving specification: " + (data.error || res.status));
-            return;
-          }
-
-          reviewSpecStatus.textContent =
-            "Specification uploaded. You can generate a performance review below.";
-          specUploadContainer.style.display = "none";
-          reviewActions.style.display = "block";
-          editSpecBtn.style.display = "inline-flex";
-        });
-
-        // Allow uploading/replacing spec when one already exists
-        editSpecBtn.addEventListener("click", () => {
-          specText.value = "";
-          specUploadContainer.style.display = "block";
-          reviewActions.style.display = "none";
-          reviewSpecStatus.textContent =
-            "Paste your new specification below, then click Save to replace the existing one.";
-        });
-
-        // ✅ Load entries with current date range (or default year if none)
-        showEntriesBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          entriesRangeStart = (entriesStartEl.value || "").trim() || null;
-          entriesRangeEnd = (entriesEndEl.value || "").trim() || null;
-
-          entriesNextCursor = null;
-          lastRenderedMonthKey = null;
-          entriesList.innerHTML = "";
-
-          await loadEntriesPage(token, false);
-        });
-
-        // ✅ Apply range (resets pagination)
-        applyRangeBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) return alert("No token found, please sign in again.");
-
-          entriesRangeStart = (entriesStartEl.value || "").trim() || null;
-          entriesRangeEnd = (entriesEndEl.value || "").trim() || null;
-
-          entriesNextCursor = null;
-          lastRenderedMonthKey = null;
-          entriesList.innerHTML = "";
-
-          await loadEntriesPage(token, false);
-        });
-
-        // ✅ Clear range (resets back to default year behaviour)
-        clearRangeBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) return alert("No token found, please sign in again.");
-
-          entriesStartEl.value = "";
-          entriesEndEl.value = "";
-          entriesRangeStart = null;
-          entriesRangeEnd = null;
-
-          entriesNextCursor = null;
-          lastRenderedMonthKey = null;
-          entriesList.innerHTML = "";
-
-          await loadEntriesPage(token, false);
-        });
-
-        nextPageBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-          await loadEntriesPage(token, true);
-        });
-
-        function renderReview(data) {
-          const text = data.review_text || "(No review text returned)";
-          const cached = data.cached ? " (cached)" : "";
-          const ts = data.generated_at ? `Generated at: ${data.generated_at}` : "";
-          let header = "";
-
-          if (ts && cached) {
-            header = `${ts} • from cache`;
-          } else if (ts) {
-            header = ts;
-          } else if (cached) {
-            header = "from cache";
-          }
-
-          if (header) {
-            reviewOutput.textContent = header + "\n\n" + text;
-          } else {
-            reviewOutput.textContent = text;
-          }
-        }
-
-        generateReviewBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          reviewOutput.textContent = "Generating performance review...";
-          const year = new Date().getFullYear();
-
-          const res = await fetch(`${apiBase}/performance-review`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ year }),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/performance-review response:", data);
-
-          if (!res.ok) {
-            reviewOutput.textContent =
-              "Error generating review: " + (data.error || res.status) +
-              (data.details ? "\n\n" + data.details : "");
-            return;
-          }
-
-          renderReview(data);
-        });
-
-        regenerateReviewBtn.addEventListener("click", async () => {
-          const token = window.localStorage.getItem("idToken");
-          if (!token) {
-            alert("No token found, please sign in again.");
-            return;
-          }
-
-          reviewOutput.textContent = "Regenerating performance review with latest entries...";
-          const year = new Date().getFullYear();
-
-          const res = await fetch(`${apiBase}/performance-review`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ year, force_regen: true }),
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/performance-review (force_regen) response:", data);
-
-          if (!res.ok) {
-            reviewOutput.textContent =
-              "Error regenerating review: " + (data.error || res.status) +
-              (data.details ? "\n\n" + data.details : "");
-            return;
-          }
-
-          renderReview(data);
-        });
-
-        // ✅ UPDATED: loadEntriesPage now supports start/end date range
-        async function loadEntriesPage(token, isNext) {
-          const url = new URL(`${apiBase}/entries`);
-          url.searchParams.set("limit", "20");
-
-          // If user set a range, use it
-          if (entriesRangeStart) url.searchParams.set("start", entriesRangeStart);
-          if (entriesRangeEnd) url.searchParams.set("end", entriesRangeEnd);
-
-          // Otherwise fallback to current year (backwards compatible)
-          if (!entriesRangeStart && !entriesRangeEnd) {
-            const year = new Date().getFullYear();
-            url.searchParams.set("year", String(year));
-          }
-
-          if (isNext && entriesNextCursor) {
-            url.searchParams.set("cursor", entriesNextCursor);
-          }
-
-          const res = await fetch(url.toString(), {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-            },
-          });
-
-          const data = await res.json().catch(() => ({}));
-          console.log("/entries response:", data);
-
-          if (!res.ok) {
-            alert("Error loading entries: " + (data.error || res.status));
-            return;
-          }
-
-          const items = data.items || [];
-
-          items.forEach((item) => {
-            const { monthKey, displayDate } = computeMonthAndDate(item);
-
-            if (monthKey !== lastRenderedMonthKey) {
-              const headerLi = document.createElement("li");
-              headerLi.textContent = monthKey;
-              headerLi.style.fontWeight = "bold";
-              headerLi.style.marginTop = lastRenderedMonthKey ? "16px" : "0";
-              headerLi.style.marginBottom = "4px";
-              entriesList.appendChild(headerLi);
-              lastRenderedMonthKey = monthKey;
-            }
-
-            const repoName = item.repo_name || item.repo || "";
-            const pr = item.pr_number || "";
-            let summary = item.summary || "";
-            const prUrl = item.pr_url || item.url || "#";
-            const eventTs = item.event_ts || item.date || "";
-
-            const li = document.createElement("li");
-            li.style.display = "flex";
-            li.style.alignItems = "center";
-            li.style.marginBottom = "6px";
-            li.style.gap = "8px";
-
-            const link = document.createElement("a");
-            link.style.flex = "1 1 auto";
-            link.href = prUrl && prUrl !== "#" ? prUrl : "#";
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
-            if (!prUrl || prUrl === "#") {
-              link.style.pointerEvents = "none";
-              link.style.textDecoration = "none";
-              link.style.color = "inherit";
-            }
-
-            const editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
-            editBtn.className = "btn btn-ghost btn-small";
-            editBtn.style.flex = "0 0 auto";
-
-            editBtn.addEventListener("click", async (e) => {
-              e.stopPropagation();
-              e.preventDefault();
-
-              const current = summary;
-              const updated = prompt("Edit your summary:", current);
-              if (updated === null) return;
-              const trimmed = updated.trim();
-              if (!trimmed || trimmed === current) return;
-
-              const token = window.localStorage.getItem("idToken");
-              if (!token) {
-                alert("No token found, please sign in again.");
-                return;
-              }
-
-              const res = await fetch(`${apiBase}/entries/update`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  event_ts: eventTs,
-                  summary: trimmed,
-                }),
-              });
-
-              const respData = await res.json().catch(() => ({}));
-              console.log("/entries/update response:", respData);
-
-              if (!res.ok) {
-                alert("Error updating entry: " + (respData.error || res.status));
-                return;
-              }
-
-              summary = trimmed;
-              link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
-            });
-
-            li.appendChild(link);
-            li.appendChild(editBtn);
-            entriesList.appendChild(li);
-          });
-
-          entriesControls.style.display = data.has_more ? "flex" : "none";
-          entriesNextCursor = data.next_cursor || null;
-        }
-
-        function computeMonthAndDate(item) {
-          const rawDate = item.date || item.event_ts || "";
-          if (!rawDate) {
-            return { monthKey: "Unknown", displayDate: "" };
-          }
-
-          const d = new Date(rawDate);
-          if (Number.isNaN(d.getTime())) {
-            return { monthKey: "Unknown", displayDate: rawDate };
-          }
-
-          const monthNames = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-          ];
-          const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-          const displayDate = d.toISOString().split("T")[0];
-
-          return { monthKey, displayDate };
-        }
-
-        window._showAdvancedSections = function () {
-          entriesSection.style.display = "block";
-          reviewSection.style.display = "block";
-        };
-      });
-
-      async function initUser(token) {
-        const statusEl = document.getElementById("status");
-        const subscribeBtn = document.getElementById("subscribe-btn");
-        const apiKeyBtn = document.getElementById("create-api-key-btn");
-        const revokeBtn = document.getElementById("revoke-api-key-btn");
-        const apiKeyDisplay = document.getElementById("api-key-display");
-        const subscriptionBadge = document.getElementById("subscription-badge");
-        const howtoBtn = document.getElementById("howto-extension-btn");
-
-        const reviewSection = document.getElementById("review-section");
-        const reviewSpecStatus = document.getElementById("review-spec-status");
-        const specUploadContainer = document.getElementById("spec-upload-container");
-        const reviewActions = document.getElementById("review-actions");
-        const editSpecBtn = document.getElementById("edit-spec-btn");
-
-        statusEl.textContent = "Loading account...";
-
-        const res = await fetch(`${apiBase}/user/init`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({}),
-        });
-
-        const data = await res.json().catch(() => ({}));
-        console.log("/user/init response:", data);
-
-        if (!res.ok) {
-          statusEl.textContent = "Error: " + (data.error || res.status);
-          subscriptionBadge.textContent = "Error";
-          subscriptionBadge.classList.add("inactive");
-          return;
-        }
-
-        const hasApiKey = !!data.has_api_key;
-        const hasSpec = !!data.has_review_spec;
-
-        if (data.subscription_status !== "active") {
-          statusEl.textContent =
-            "Subscription inactive. Click below to start your £5/mo subscription.";
-          subscribeBtn.style.display = "inline-flex";
-          apiKeyBtn.style.display = "none";
-          revokeBtn.style.display = "none";
-          howtoBtn.style.display = "none";
-          apiKeyDisplay.style.display = "none";
-
-          reviewSection.style.display = "block";
-
-          subscriptionBadge.textContent = "Inactive";
-          subscriptionBadge.classList.add("inactive");
-        } else {
-          statusEl.textContent = "Subscription active.";
-          subscribeBtn.style.display = "none";
-          apiKeyBtn.style.display = "inline-flex";
-
-          subscriptionBadge.textContent = "Active";
-          subscriptionBadge.classList.remove("inactive");
-
-          if (hasApiKey) {
-            apiKeyBtn.textContent = "Show API Key";
-            revokeBtn.style.display = "inline-flex";
-            howtoBtn.style.display = "inline-flex";
-            apiKeyDisplay.style.display = "none";
-            apiKeyDisplay.textContent = "";
-          } else {
-            apiKeyBtn.textContent = "Generate / Show API Key";
-            revokeBtn.style.display = "none";
-            howtoBtn.style.display = "none";
-            apiKeyDisplay.style.display = "none";
-            apiKeyDisplay.textContent = "";
-          }
-
-          if (window._showAdvancedSections) {
-            window._showAdvancedSections();
-          }
-
-          if (hasSpec) {
-            reviewSpecStatus.textContent =
-              "Specification uploaded. You can generate a performance review below.";
-            specUploadContainer.style.display = "none";
-            reviewActions.style.display = "block";
-            editSpecBtn.style.display = "inline-flex";
-          } else {
-            reviewSpecStatus.textContent =
-              "Step 1: Paste your levels & expectations below to enable performance review generation.";
-            specUploadContainer.style.display = "block";
-            reviewActions.style.display = "none";
-            editSpecBtn.style.display = "none";
-          }
-        }
-      }
-    </script>
-  </body>
+</pre>
+
+<!-- Historic reviews -->
+<div id="history-section" style="display:none; margin-top: 16px;">
+<div class="section-label">Historic reviews</div>
+<button id="load-history-btn" class="btn btn-secondary btn-small">
+Load reviews for this year
+</button>
+<ul id="history-list"></ul>
+</div>
+</section>
+</div>
+</div>
+
+<!-- How-to overlay -->
+<div id="howto-overlay" class="howto-overlay">
+<div class="howto-card">
+<div class="howto-header">
+<div>
+<div class="howto-title">Connect the Chrome extension</div>
+<div class="howto-subtitle">
+Follow these steps once you’ve generated your API key.
+</div>
+</div>
+<button id="howto-close-btn" class="howto-close" aria-label="Close">
+×
+</button>
+</div>
+
+<ul class="step-list">
+<li class="step-item">
+<div class="step-badge">1</div>
+<div class="step-body">
+<strong>Open Chrome &amp; find the extension.</strong><br />
+Install <em>RapidReviewer</em> from the Chrome Web Store. Then click the
+<strong>puzzle icon</strong> in your browser toolbar and pin the extension.
+</div>
+</li>
+<li class="step-item">
+<div class="step-badge">2</div>
+<div class="step-body">
+<strong>Open the extension settings.</strong><br />
+Click the extension icon, then click <strong>Options</strong> (or
+right-click the icon &amp; choose <strong>Options</strong> / <strong>Extension options</strong>).
+</div>
+</li>
+<li class="step-item">
+<div class="step-badge">3</div>
+<div class="step-body">
+<strong>Paste your API key &amp; save.</strong><br />
+Copy the API key from this page, paste it into the <strong>API Key</strong> field in the
+extension settings, and click <strong>Save</strong>. From now on, any merge or approval you do on GitHub
+will be logged automatically.
+</div>
+</li>
+</ul>
+
+<div class="howto-footer">
+<span>Tip: you can regenerate or revoke your API key here at any time.</span>
+<button id="howto-gotit-btn" class="btn btn-primary btn-small">
+Got it
+</button>
+</div>
+</div>
+</div>
+
+<script>
+const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
+
+let entriesNextCursor = null;
+let lastRenderedMonthKey = null;
+
+function parseHash() {
+const raw = window.location.hash.startsWith("#")
+? window.location.hash.substring(1)
+: window.location.hash;
+
+const params = new URLSearchParams(raw);
+return {
+idToken: params.get("id_token"),
+billing: params.get("billing"),
+};
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+const statusEl = document.getElementById("status");
+const subscribeBtn = document.getElementById("subscribe-btn");
+const apiKeyBtn = document.getElementById("create-api-key-btn");
+const revokeBtn = document.getElementById("revoke-api-key-btn");
+const apiKeyDisplay = document.getElementById("api-key-display");
+const subscriptionBadge = document.getElementById("subscription-badge");
+const howtoBtn = document.getElementById("howto-extension-btn");
+const howtoOverlay = document.getElementById("howto-overlay");
+const howtoCloseBtn = document.getElementById("howto-close-btn");
+const howtoGotItBtn = document.getElementById("howto-gotit-btn");
+
+const entriesSection = document.getElementById("entries-section");
+const showEntriesBtn = document.getElementById("show-entries-btn");
+const entriesControls = document.getElementById("entries-controls");
+const nextPageBtn = document.getElementById("next-page-btn");
+const entriesList = document.getElementById("entries-list");
+
+const reviewSection = document.getElementById("review-section");
+const reviewSpecStatus = document.getElementById("review-spec-status");
+const specUploadContainer = document.getElementById("spec-upload-container");
+const specText = document.getElementById("spec-text");
+const saveSpecBtn = document.getElementById("save-spec-btn");
+const reviewActions = document.getElementById("review-actions");
+const generateReviewBtn = document.getElementById("generate-review-btn");
+const regenerateReviewBtn = document.getElementById("regenerate-review-btn");
+const reviewOutput = document.getElementById("review-output");
+const editSpecBtn = document.getElementById("edit-spec-btn");
+
+const startDateInput = document.getElementById("review-start-date");
+const endDateInput = document.getElementById("review-end-date");
+
+const historySection = document.getElementById("history-section");
+const loadHistoryBtn = document.getElementById("load-history-btn");
+const historyList = document.getElementById("history-list");
+
+const { idToken, billing } = parseHash();
+const storedToken = window.localStorage.getItem("idToken");
+let tokenToUse = idToken || storedToken || null;
+
+if (billing === "success") {
+statusEl.textContent = "Payment complete – checking subscription status…";
+} else if (billing === "cancel") {
+statusEl.textContent = "Payment cancelled. You can retry subscription below.";
+}
+
+if (idToken) {
+window.localStorage.setItem("idToken", idToken);
+}
+
+if (!tokenToUse) {
+statusEl.textContent = "No token found. Please sign in again.";
+subscriptionBadge.textContent = "Not signed in";
+subscriptionBadge.classList.add("inactive");
+return;
+}
+
+initUser(tokenToUse);
+
+// --- Button handlers ---
+
+subscribeBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+const res = await fetch(`${apiBase}/billing/create-checkout-session`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({}),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/billing/create-checkout-session response:", data);
+
+if (!res.ok) {
+alert("Error creating checkout session: " + (data.error || res.status));
+return;
+}
+
+window.location = data.checkout_url;
+});
+
+apiKeyBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+const res = await fetch(`${apiBase}/apikey`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({ action: "get_or_create" }),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/apikey response:", data);
+
+if (!res.ok) {
+alert("Error generating API key: " + (data.error || res.status));
+return;
+}
+
+apiKeyDisplay.style.display = "block";
+apiKeyDisplay.textContent = "API Key (paste into extension):\n" + data.api_key;
+apiKeyBtn.textContent = "Show API Key";
+revokeBtn.style.display = "inline-block";
+howtoBtn.style.display = "inline-block";
+});
+
+revokeBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+if (!confirm("Revoke your current API key? Your extension will stop working until you generate a new one.")) {
+return;
+}
+
+const res = await fetch(`${apiBase}/apikey`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({ action: "revoke" }),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/apikey revoke response:", data);
+
+if (!res.ok) {
+alert("Error revoking API key: " + (data.error || res.status));
+return;
+}
+
+apiKeyDisplay.style.display = "block";
+apiKeyDisplay.textContent = "API key revoked.";
+apiKeyBtn.textContent = "Generate / Show API Key";
+revokeBtn.style.display = "none";
+howtoBtn.style.display = "none";
+});
+
+// How-to overlay handlers
+function openHowto() {
+howtoOverlay.style.display = "flex";
+}
+function closeHowto() {
+howtoOverlay.style.display = "none";
+}
+
+howtoBtn.addEventListener("click", openHowto);
+howtoCloseBtn.addEventListener("click", closeHowto);
+howtoGotItBtn.addEventListener("click", closeHowto);
+howtoOverlay.addEventListener("click", (e) => {
+if (e.target === howtoOverlay) {
+closeHowto();
+}
+});
+
+saveSpecBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+const text = (specText.value || "").trim();
+if (!text) {
+alert("Please paste your specification before saving.");
+return;
+}
+
+const res = await fetch(`${apiBase}/specs`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({ spec_text: text }),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/spec response:", data);
+
+if (!res.ok) {
+alert("Error saving specification: " + (data.error || res.status));
+return;
+}
+
+reviewSpecStatus.textContent =
+"Specification uploaded. You can generate a performance review below.";
+specUploadContainer.style.display = "none";
+reviewActions.style.display = "block";
+editSpecBtn.style.display = "inline-flex";
+historySection.style.display = "block";
+});
+
+editSpecBtn.addEventListener("click", () => {
+specText.value = "";
+specUploadContainer.style.display = "block";
+reviewActions.style.display = "none";
+reviewSpecStatus.textContent =
+"Paste your new specification below, then click Save to replace the existing one.";
+});
+
+showEntriesBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+entriesNextCursor = null;
+lastRenderedMonthKey = null;
+entriesList.innerHTML = "";
+await loadEntriesPage(token, false);
+});
+
+nextPageBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+await loadEntriesPage(token, true);
+});
+
+function renderReview(data) {
+const text = data.review_text || "(No review text returned)";
+const cached = data.cached ? " (cached)" : "";
+const ts = data.generated_at ? `Generated at: ${data.generated_at}` : "";
+const period = data.period_label ? `Period: ${data.period_label}` : "";
+let header = "";
+
+if (ts && cached && period) {
+header = `${ts} • ${period} • from cache`;
+} else if (ts && period) {
+header = `${ts} • ${period}${cached}`;
+} else if (ts) {
+header = `${ts}${cached}`;
+} else if (cached) {
+header = `from cache`;
+}
+
+if (header) {
+reviewOutput.textContent = header + "\n\n" + text;
+} else {
+reviewOutput.textContent = text;
+}
+}
+
+generateReviewBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+reviewOutput.textContent = "Generating performance review...";
+const year = new Date().getFullYear();
+const startDate = (startDateInput.value || "").trim();
+const endDate = (endDateInput.value || "").trim();
+
+const body = { year };
+if (startDate && endDate) {
+body.start_date = startDate;
+body.end_date = endDate;
+}
+
+const res = await fetch(`${apiBase}/performance-review`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify(body),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/performance-review response:", data);
+
+if (!res.ok) {
+if (res.status === 429 && data.error === "monthly_limit_reached") {
+reviewOutput.textContent =
+`You've reached your monthly limit of ${data.limit} reviews.\n` +
+`Used: ${data.used}. Try again next month.`;
+} else {
+reviewOutput.textContent =
+"Error generating review: " + (data.error || res.status) +
+(data.details ? "\n\n" + data.details : "");
+}
+return;
+}
+
+renderReview(data);
+});
+
+regenerateReviewBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+reviewOutput.textContent = "Regenerating performance review with latest entries...";
+const year = new Date().getFullYear();
+const startDate = (startDateInput.value || "").trim();
+const endDate = (endDateInput.value || "").trim();
+
+const body = { year, force_regen: true };
+if (startDate && endDate) {
+body.start_date = startDate;
+body.end_date = endDate;
+}
+
+const res = await fetch(`${apiBase}/performance-review`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify(body),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/performance-review (force_regen) response:", data);
+
+if (!res.ok) {
+if (res.status === 429 && data.error === "monthly_limit_reached") {
+reviewOutput.textContent =
+`You've reached your monthly limit of ${data.limit} reviews.\n` +
+`Used: ${data.used}. Try again next month.`;
+} else {
+reviewOutput.textContent =
+"Error regenerating review: " + (data.error || res.status) +
+(data.details ? "\n\n" + data.details : "");
+}
+return;
+}
+
+renderReview(data);
+});
+
+loadHistoryBtn.addEventListener("click", async () => {
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+const year = new Date().getFullYear();
+const url = new URL(`${apiBase}/performance-review`);
+url.searchParams.set("year", String(year));
+
+const res = await fetch(url.toString(), {
+method: "GET",
+headers: { "Authorization": `Bearer ${token}` },
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/performance-review history response:", data);
+
+if (!res.ok) {
+alert("Error loading historic reviews: " + (data.error || res.status));
+return;
+}
+
+const items = data.items || [];
+historyList.innerHTML = "";
+if (!items.length) {
+const li = document.createElement("li");
+li.textContent = "No historic reviews for this year yet.";
+historyList.appendChild(li);
+return;
+}
+
+items.forEach((item, idx) => {
+const li = document.createElement("li");
+
+const meta = document.createElement("div");
+meta.className = "history-meta";
+
+const title = document.createElement("div");
+const genAt = item.generated_at || "";
+const label = item.period_label || data.year || "";
+title.innerHTML = `<strong>Review ${idx + 1}</strong> · <span>${label}</span>`;
+meta.appendChild(title);
+
+if (genAt) {
+const ts = document.createElement("div");
+ts.style.fontSize = "10px";
+ts.style.color = "var(--text-muted)";
+ts.textContent = `Generated at: ${genAt}`;
+meta.appendChild(ts);
+}
+
+const btn = document.createElement("button");
+btn.className = "btn btn-ghost btn-small";
+btn.textContent = "Download";
+btn.addEventListener("click", () => {
+const text = item.review_text || "";
+const blob = new Blob([text], { type: "text/plain" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+const safeLabel = (label || data.year || "review").replace(/[^a-zA-Z0-9_-]+/g, "-");
+a.download = `rapidreviewer-${safeLabel}-${idx + 1}.txt`;
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+});
+
+li.appendChild(meta);
+li.appendChild(btn);
+historyList.appendChild(li);
+});
+});
+
+async function loadEntriesPage(token, isNext) {
+const year = new Date().getFullYear();
+const startDate = (startDateInput.value || "").trim();
+const endDate = (endDateInput.value || "").trim();
+
+const url = new URL(`${apiBase}/entries`);
+if (startDate && endDate) {
+url.searchParams.set("start_date", startDate);
+url.searchParams.set("end_date", endDate);
+} else {
+url.searchParams.set("year", String(year));
+}
+url.searchParams.set("limit", "20");
+if (isNext && entriesNextCursor) {
+url.searchParams.set("cursor", entriesNextCursor);
+}
+
+const res = await fetch(url.toString(), {
+method: "GET",
+headers: {
+"Authorization": `Bearer ${token}`,
+},
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/entries response:", data);
+
+if (!res.ok) {
+alert("Error loading entries: " + (data.error || res.status));
+return;
+}
+
+const items = data.items || [];
+
+items.forEach((item) => {
+const { monthKey, displayDate } = computeMonthAndDate(item);
+
+if (monthKey !== lastRenderedMonthKey) {
+const headerLi = document.createElement("li");
+headerLi.textContent = monthKey;
+headerLi.style.fontWeight = "bold";
+headerLi.style.marginTop = lastRenderedMonthKey ? "16px" : "0";
+headerLi.style.marginBottom = "4px";
+entriesList.appendChild(headerLi);
+lastRenderedMonthKey = monthKey;
+}
+
+const repoName = item.repo_name || item.repo || "";
+const pr = item.pr_number || "";
+let summary = item.summary || "";
+const prUrl = item.pr_url || item.url || "#";
+const eventTs = item.event_ts || item.date || "";
+
+const li = document.createElement("li");
+li.style.display = "flex";
+li.style.alignItems = "center";
+li.style.marginBottom = "6px";
+li.style.gap = "8px";
+
+const link = document.createElement("a");
+link.style.flex = "1 1 auto";
+link.href = prUrl && prUrl !== "#" ? prUrl : "#";
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+if (!prUrl || prUrl === "#") {
+link.style.pointerEvents = "none";
+link.style.textDecoration = "none";
+link.style.color = "inherit";
+}
+
+const editBtn = document.createElement("button");
+editBtn.textContent = "Edit";
+editBtn.className = "btn btn-ghost btn-small";
+editBtn.style.flex = "0 0 auto";
+
+editBtn.addEventListener("click", async (e) => {
+e.stopPropagation();
+e.preventDefault();
+
+const current = summary;
+const updated = prompt("Edit your summary:", current);
+if (updated === null) return;
+const trimmed = updated.trim();
+if (!trimmed || trimmed === current) return;
+
+const token = window.localStorage.getItem("idToken");
+if (!token) {
+alert("No token found, please sign in again.");
+return;
+}
+
+const res = await fetch(`${apiBase}/entries/update`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({
+event_ts: eventTs,
+summary: trimmed,
+}),
+});
+
+const respData = await res.json().catch(() => ({}));
+console.log("/entries/update response:", respData);
+
+if (!res.ok) {
+alert("Error updating entry: " + (respData.error || res.status));
+return;
+}
+
+summary = trimmed;
+link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+});
+
+li.appendChild(link);
+li.appendChild(editBtn);
+entriesList.appendChild(li);
+});
+
+entriesControls.style.display = data.has_more ? "flex" : "none";
+entriesNextCursor = data.next_cursor || null;
+}
+
+function computeMonthAndDate(item) {
+const rawDate = item.date || item.event_ts || "";
+if (!rawDate) {
+return { monthKey: "Unknown", displayDate: "" };
+}
+
+const d = new Date(rawDate);
+if (Number.isNaN(d.getTime())) {
+return { monthKey: "Unknown", displayDate: rawDate };
+}
+
+const monthNames = [
+"January", "February", "March", "April", "May", "June",
+"July", "August", "September", "October", "November", "December"
+];
+const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+const displayDate = d.toISOString().split("T")[0];
+
+return { monthKey, displayDate };
+}
+
+window._showAdvancedSections = function () {
+entriesSection.style.display = "block";
+reviewSection.style.display = "block";
+historySection.style.display = "block";
+};
+});
+
+async function initUser(token) {
+const statusEl = document.getElementById("status");
+const subscribeBtn = document.getElementById("subscribe-btn");
+const apiKeyBtn = document.getElementById("create-api-key-btn");
+const revokeBtn = document.getElementById("revoke-api-key-btn");
+const apiKeyDisplay = document.getElementById("api-key-display");
+const subscriptionBadge = document.getElementById("subscription-badge");
+const howtoBtn = document.getElementById("howto-extension-btn");
+
+const reviewSection = document.getElementById("review-section");
+const reviewSpecStatus = document.getElementById("review-spec-status");
+const specUploadContainer = document.getElementById("spec-upload-container");
+const reviewActions = document.getElementById("review-actions");
+const editSpecBtn = document.getElementById("edit-spec-btn");
+const historySection = document.getElementById("history-section");
+
+statusEl.textContent = "Loading account...";
+
+const res = await fetch(`${apiBase}/user/init`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${token}`,
+},
+body: JSON.stringify({}),
+});
+
+const data = await res.json().catch(() => ({}));
+console.log("/user/init response:", data);
+
+if (!res.ok) {
+statusEl.textContent = "Error: " + (data.error || res.status);
+subscriptionBadge.textContent = "Error";
+subscriptionBadge.classList.add("inactive");
+return;
+}
+
+const hasApiKey = !!data.has_api_key;
+const hasSpec = !!data.has_review_spec;
+
+if (data.subscription_status !== "active") {
+statusEl.textContent =
+"Subscription inactive. Click below to start your £0.99/mo subscription.";
+subscribeBtn.style.display = "inline-flex";
+apiKeyBtn.style.display = "none";
+revokeBtn.style.display = "none";
+howtoBtn.style.display = "none";
+apiKeyDisplay.style.display = "none";
+
+reviewSection.style.display = "block";
+historySection.style.display = "none";
+
+subscriptionBadge.textContent = "Inactive";
+subscriptionBadge.classList.add("inactive");
+} else {
+statusEl.textContent = "Subscription active.";
+subscribeBtn.style.display = "none";
+apiKeyBtn.style.display = "inline-flex";
+
+subscriptionBadge.textContent = "Active";
+subscriptionBadge.classList.remove("inactive");
+
+if (hasApiKey) {
+apiKeyBtn.textContent = "Show API Key";
+revokeBtn.style.display = "inline-flex";
+howtoBtn.style.display = "inline-flex";
+apiKeyDisplay.style.display = "none";
+apiKeyDisplay.textContent = "";
+} else {
+apiKeyBtn.textContent = "Generate / Show API Key";
+revokeBtn.style.display = "none";
+howtoBtn.style.display = "none";
+apiKeyDisplay.style.display = "none";
+apiKeyDisplay.textContent = "";
+}
+
+if (window._showAdvancedSections) {
+window._showAdvancedSections();
+}
+
+if (hasSpec) {
+reviewSpecStatus.textContent =
+"Specification uploaded. You can generate a performance review below.";
+specUploadContainer.style.display = "none";
+reviewActions.style.display = "block";
+editSpecBtn.style.display = "inline-flex";
+historySection.style.display = "block";
+} else {
+reviewSpecStatus.textContent =
+"Step 1: Paste your levels & expectations below to enable performance review generation.";
+specUploadContainer.style.display = "block";
+reviewActions.style.display = "none";
+editSpecBtn.style.display = "none";
+historySection.style.display = "none";
+}
+}
+}
+</script>
+</body>
 </html>
