@@ -464,12 +464,38 @@
               <div>
                 <div class="card-title" style="font-size: 14px;">Your PR entries</div>
                 <div class="card-subtitle">
-                  Captured each time you merge or approve a PR this year.
+                  Choose any date range, then load entries (20 per page).
                 </div>
               </div>
             </div>
 
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
+            <!-- ✅ NEW: Date range picker -->
+            <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-top:10px;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color: var(--text-muted);">Start</label>
+                <input
+                  id="entries-start"
+                  type="date"
+                  class="btn btn-secondary"
+                  style="border-radius:10px; padding:8px 10px;"
+                />
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color: var(--text-muted);">End</label>
+                <input
+                  id="entries-end"
+                  type="date"
+                  class="btn btn-secondary"
+                  style="border-radius:10px; padding:8px 10px;"
+                />
+              </div>
+
+              <button id="apply-range-btn" class="btn btn-ghost btn-small">Apply range</button>
+              <button id="clear-range-btn" class="btn btn-ghost btn-small">Clear</button>
+            </div>
+
+            <div style="display:flex; justify-content: space-between; align-items:center; margin-top:10px;">
               <button id="show-entries-btn" class="btn btn-secondary btn-small">
                 Load entries (20 per page)
               </button>
@@ -645,6 +671,14 @@ Your AI-generated performance review will appear here after you click "Generate 
         const entriesControls = document.getElementById("entries-controls");
         const nextPageBtn = document.getElementById("next-page-btn");
         const entriesList = document.getElementById("entries-list");
+
+        // ✅ NEW: date range controls
+        const entriesStartEl = document.getElementById("entries-start");
+        const entriesEndEl = document.getElementById("entries-end");
+        const applyRangeBtn = document.getElementById("apply-range-btn");
+        const clearRangeBtn = document.getElementById("clear-range-btn");
+        let entriesRangeStart = null; // "YYYY-MM-DD"
+        let entriesRangeEnd = null;   // "YYYY-MM-DD"
 
         const reviewSection = document.getElementById("review-section");
         const reviewSpecStatus = document.getElementById("review-spec-status");
@@ -838,15 +872,53 @@ Your AI-generated performance review will appear here after you click "Generate 
             "Paste your new specification below, then click Save to replace the existing one.";
         });
 
+        // ✅ Load entries with current date range (or default year if none)
         showEntriesBtn.addEventListener("click", async () => {
           const token = window.localStorage.getItem("idToken");
           if (!token) {
             alert("No token found, please sign in again.");
             return;
           }
+
+          entriesRangeStart = (entriesStartEl.value || "").trim() || null;
+          entriesRangeEnd = (entriesEndEl.value || "").trim() || null;
+
           entriesNextCursor = null;
           lastRenderedMonthKey = null;
           entriesList.innerHTML = "";
+
+          await loadEntriesPage(token, false);
+        });
+
+        // ✅ Apply range (resets pagination)
+        applyRangeBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) return alert("No token found, please sign in again.");
+
+          entriesRangeStart = (entriesStartEl.value || "").trim() || null;
+          entriesRangeEnd = (entriesEndEl.value || "").trim() || null;
+
+          entriesNextCursor = null;
+          lastRenderedMonthKey = null;
+          entriesList.innerHTML = "";
+
+          await loadEntriesPage(token, false);
+        });
+
+        // ✅ Clear range (resets back to default year behaviour)
+        clearRangeBtn.addEventListener("click", async () => {
+          const token = window.localStorage.getItem("idToken");
+          if (!token) return alert("No token found, please sign in again.");
+
+          entriesStartEl.value = "";
+          entriesEndEl.value = "";
+          entriesRangeStart = null;
+          entriesRangeEnd = null;
+
+          entriesNextCursor = null;
+          lastRenderedMonthKey = null;
+          entriesList.innerHTML = "";
+
           await loadEntriesPage(token, false);
         });
 
@@ -944,12 +1016,21 @@ Your AI-generated performance review will appear here after you click "Generate 
           renderReview(data);
         });
 
+        // ✅ UPDATED: loadEntriesPage now supports start/end date range
         async function loadEntriesPage(token, isNext) {
-          const year = new Date().getFullYear();
-
           const url = new URL(`${apiBase}/entries`);
-          url.searchParams.set("year", String(year));
           url.searchParams.set("limit", "20");
+
+          // If user set a range, use it
+          if (entriesRangeStart) url.searchParams.set("start", entriesRangeStart);
+          if (entriesRangeEnd) url.searchParams.set("end", entriesRangeEnd);
+
+          // Otherwise fallback to current year (backwards compatible)
+          if (!entriesRangeStart && !entriesRangeEnd) {
+            const year = new Date().getFullYear();
+            url.searchParams.set("year", String(year));
+          }
+
           if (isNext && entriesNextCursor) {
             url.searchParams.set("cursor", entriesNextCursor);
           }
