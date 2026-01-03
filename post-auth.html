@@ -149,7 +149,7 @@
         padding: 9px 12px;
         cursor: pointer;
         font-size: 12px;
-        transition: transform 0.05s ease;
+        transition: transform 0.05s.ease;
       }
 
       .btn:active {
@@ -622,7 +622,6 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // CONFIG
       // -----------------------------
-      // Set this to your API Gateway base URL (no trailing slash)
       const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
 
       // -----------------------------
@@ -678,16 +677,14 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       function persistTokenFromUrl() {
         const hashParams = parseHashParams();
-        // Common Cognito implicit flow: id_token in hash
         if (hashParams.id_token) {
           window.localStorage.setItem("idToken", hashParams.id_token);
-          // Clean URL
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       }
 
       // -----------------------------
-      // Date helpers (FIX)
+      // Date helpers
       // -----------------------------
       function todayISO() {
         return new Date().toISOString().split("T")[0];
@@ -696,10 +693,6 @@ Your AI-generated performance review will appear here after you click "Generate 
       function getNormalizedDateRange(startInput, endInput) {
         let start = (startInput.value || "").trim();
         let end = (endInput.value || "").trim();
-
-        // ✅ FIX #1: Previously the frontend only sent dates if BOTH were set.
-        // That meant "From only" fell back to current year.
-        // Now: if one side is set, we auto-fill the other.
 
         if (start && !end) {
           end = todayISO();
@@ -710,7 +703,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           startInput.value = start;
         }
 
-        // Swap if inverted
         if (start && end && start > end) {
           const tmp = start;
           start = end;
@@ -719,8 +711,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           endInput.value = end;
         }
 
-        // ✅ FIX #2: When a range is used, the "year" should come from that range,
-        // not from "new Date().getFullYear()" (new year bug).
         const year =
           (start && new Date(start).getFullYear()) ||
           (end && new Date(end).getFullYear()) ||
@@ -748,7 +738,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // UI rendering helpers
+      // UI helpers
       // -----------------------------
       function setStatus(msg, isError = false) {
         statusEl.textContent = msg || "";
@@ -830,8 +820,9 @@ Your AI-generated performance review will appear here after you click "Generate 
 
           const repoName = item.repo_name || item.repo || "";
           const pr = item.pr_number || "";
-          const summary = item.summary || "";
+          let summary = item.summary || "";
           const prUrl = item.pr_url || item.url || "#";
+          const eventTs = item.event_ts || item.date || "";
 
           const li = document.createElement("li");
           li.style.display = "flex";
@@ -852,7 +843,53 @@ Your AI-generated performance review will appear here after you click "Generate 
             link.style.color = "inherit";
           }
 
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.className = "btn btn-ghost btn-small";
+          editBtn.style.flex = "0 0 auto";
+
+          editBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const current = summary;
+            const updated = prompt("Edit your summary:", current);
+            if (updated === null) return;
+            const trimmed = updated.trim();
+            if (!trimmed || trimmed === current) return;
+
+            const token = window.localStorage.getItem("idToken");
+            if (!token) {
+              alert("No token found, please sign in again.");
+              return;
+            }
+
+            const updateRes = await fetch(`${apiBase}/entries/update`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                event_ts: eventTs,
+                summary: trimmed,
+              }),
+            });
+
+            const updateData = await updateRes.json().catch(() => ({}));
+            console.log("/entries/update response:", updateData);
+
+            if (!updateRes.ok) {
+              alert("Error updating entry: " + (updateData.error || updateRes.status));
+              return;
+            }
+
+            summary = trimmed;
+            link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
+          });
+
           li.appendChild(link);
+          li.appendChild(editBtn);
           entriesList.appendChild(li);
         });
 
@@ -913,7 +950,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // Use year from date range if present (so it doesn’t always default to new year)
         const { start, end, year } = getNormalizedDateRange(startDateInput, endDateInput);
 
         const url = new URL(`${apiBase}/performance-review`);
@@ -986,10 +1022,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Minimal “bootstrap” (wire up buttons)
+      // Minimal “bootstrap”
       // -----------------------------
       function showAuthedUI() {
-        // You can refine these based on your real /me and subscription endpoints.
         entriesSection.style.display = "block";
         reviewActions.style.display = "block";
         createApiKeyBtn.style.display = "inline-block";
@@ -1085,7 +1120,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.remove("active");
         subscriptionBadge.classList.add("inactive");
       } else {
-        // Replace with your real "check subscription/user" calls.
         showAuthedUI();
       }
     </script>
