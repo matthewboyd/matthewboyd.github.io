@@ -412,6 +412,35 @@
       .history-meta span {
         color: var(--text-muted);
       }
+
+      /* GitHub import */
+      #github-import-section {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(148, 163, 184, 0.3);
+      }
+
+      #github-token-input {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.95);
+        color: var(--text-main);
+        font-size: 12px;
+        padding: 6px 8px;
+        margin-top: 4px;
+      }
+
+      #github-token-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      #github-import-status {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
     </style>
   </head>
 
@@ -501,6 +530,36 @@
             </div>
 
             <ul id="entries-list"></ul>
+
+            <!-- GitHub import section -->
+            <div id="github-import-section">
+              <div class="card-header" style="padding: 0; margin-bottom: 6px;">
+                <div>
+                  <div class="card-title" style="font-size: 14px;">GitHub import (beta)</div>
+                  <div class="card-subtitle">
+                    Pull PRs from GitHub into RapidReviewer using the same date range above.
+                  </div>
+                </div>
+              </div>
+              <div class="date-helper">
+                We’ll fetch PRs authored by you between the selected dates.
+                If the range is empty, we default to the current year.
+              </div>
+              <div style="margin-top: 6px;">
+                <div class="section-label" style="margin-bottom: 4px;">GitHub token (optional)</div>
+                <input
+                  id="github-token-input"
+                  type="password"
+                  placeholder="ghp_… (if your import Lambda expects a token in the body)"
+                />
+              </div>
+              <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:8px;">
+                <button id="github-import-btn" class="btn btn-primary btn-small">
+                  Import PRs from GitHub
+                </button>
+              </div>
+              <div id="github-import-status"></div>
+            </div>
           </div>
         </section>
 
@@ -644,6 +703,10 @@ Your AI-generated performance review will appear here after you click "Generate 
       const nextPageBtn = document.getElementById("next-page-btn");
       const entriesControls = document.getElementById("entries-controls");
       const entriesList = document.getElementById("entries-list");
+
+      const githubTokenInput = document.getElementById("github-token-input");
+      const githubImportBtn = document.getElementById("github-import-btn");
+      const githubImportStatus = document.getElementById("github-import-status");
 
       const reviewSpecStatus = document.getElementById("review-spec-status");
       const editSpecBtn = document.getElementById("edit-spec-btn");
@@ -935,6 +998,61 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
+      // GitHub import (uses same date range)
+      // -----------------------------
+      async function importFromGitHub() {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const { start, end, year } = getNormalizedDateRange(startDateInput, endDateInput);
+        const body = { year };
+
+        if (start && end) {
+          body.start_date = start;
+          body.end_date = end;
+        }
+
+        const ghToken = (githubTokenInput.value || "").trim();
+        if (ghToken) {
+          body.github_token = ghToken; // adapt to your Lambda’s expected field name
+        }
+
+        githubImportStatus.style.color = "var(--text-muted)";
+        githubImportStatus.textContent = "Importing PRs from GitHub…";
+
+        const { res, data } = await apiFetch("/github-import", {
+          method: "POST",
+          token,
+          body,
+        });
+
+        console.log("/github-import response:", data);
+
+        if (!res.ok) {
+          githubImportStatus.style.color = "rgba(239,68,68,0.95)";
+          githubImportStatus.textContent =
+            "Error importing PRs: " + (data.error || data.message || res.status);
+          return;
+        }
+
+        const imported =
+          data.imported_count ??
+          data.imported ??
+          data.count ??
+          data.total_imported ??
+          0;
+
+        githubImportStatus.style.color = "var(--text-muted)";
+        githubImportStatus.textContent = `Imported ${imported} PR${imported === 1 ? "" : "s"} from GitHub.`;
+
+        // Reload entries to show newly imported ones
+        await loadEntriesPage(token, false);
+      }
+
+      // -----------------------------
       // Review generation
       // -----------------------------
       async function generateOrRegenReview({ forceRegen }) {
@@ -1091,6 +1209,10 @@ Your AI-generated performance review will appear here after you click "Generate 
         const token = window.localStorage.getItem("idToken");
         if (!token) return alert("No token found, please sign in again.");
         await loadEntriesPage(token, true);
+      });
+
+      githubImportBtn.addEventListener("click", async () => {
+        await importFromGitHub();
       });
 
       generateReviewBtn.addEventListener("click", async () => {
