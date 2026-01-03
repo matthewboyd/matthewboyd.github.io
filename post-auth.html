@@ -412,28 +412,6 @@
       .history-meta span {
         color: var(--text-muted);
       }
-
-      /* GitHub import */
-      #github-token {
-        width: 100%;
-        border-radius: 10px;
-        border: 1px solid rgba(148, 163, 184, 0.45);
-        background: rgba(15, 23, 42, 0.95);
-        color: var(--text-main);
-        font-size: 12px;
-        padding: 6px 8px;
-      }
-
-      #github-token:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-
-      #github-import-status {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 4px;
-      }
     </style>
   </head>
 
@@ -511,28 +489,6 @@
                 <div><strong>Fix:</strong> If you set only one date, we’ll auto-fill the other and use the range.</div>
                 <div>If both are blank, we use the current calendar year.</div>
               </div>
-            </div>
-
-            <!-- GitHub import panel -->
-            <div style="margin-top:10px; margin-bottom:10px;">
-              <div class="section-label">Import PRs from GitHub (optional)</div>
-              <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-                Paste a GitHub personal access token with <code>repo</code> (and/or
-                <code>read:org</code> if needed). We’ll import merged PRs you’re involved in
-                for the selected date range.
-              </div>
-              <input
-                type="password"
-                id="github-token"
-                placeholder="ghp_… personal access token"
-                autocomplete="off"
-              />
-              <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:6px;">
-                <button id="github-import-btn" class="btn btn-secondary btn-small">
-                  Import PRs from GitHub
-                </button>
-              </div>
-              <div id="github-import-status"></div>
             </div>
 
             <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
@@ -666,7 +622,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // CONFIG
       // -----------------------------
-      const apiBase = "https://api.rapidreviewer.io";
+      // Set this to your API Gateway base URL (no trailing slash)
+      const apiBase = "https://r2e2xzwttc.execute-api.eu-west-1.amazonaws.com/prod";
 
       // -----------------------------
       // DOM refs
@@ -687,10 +644,6 @@ Your AI-generated performance review will appear here after you click "Generate 
       const nextPageBtn = document.getElementById("next-page-btn");
       const entriesControls = document.getElementById("entries-controls");
       const entriesList = document.getElementById("entries-list");
-
-      const githubTokenInput = document.getElementById("github-token");
-      const githubImportBtn = document.getElementById("github-import-btn");
-      const githubImportStatus = document.getElementById("github-import-status");
 
       const reviewSpecStatus = document.getElementById("review-spec-status");
       const editSpecBtn = document.getElementById("edit-spec-btn");
@@ -725,8 +678,10 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       function persistTokenFromUrl() {
         const hashParams = parseHashParams();
+        // Common Cognito implicit flow: id_token in hash
         if (hashParams.id_token) {
           window.localStorage.setItem("idToken", hashParams.id_token);
+          // Clean URL
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       }
@@ -812,10 +767,52 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Entries pagination state
+      // Entries pagination + edit/delete
       // -----------------------------
       let entriesNextCursor = null;
       let lastRenderedMonthKey = null;
+
+      async function updateEntry(dateValue, newSummary) {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const { res, data } = await apiFetch("/entries/update", {
+          method: "POST",
+          token,
+          body: { date: dateValue, summary: newSummary },
+        });
+
+        if (!res.ok) {
+          alert("Error updating entry: " + (data.error || res.status));
+          return;
+        }
+
+        await loadEntriesPage(token, false);
+      }
+
+      async function deleteEntry(dateValue) {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const { res, data } = await apiFetch("/entries/update", {
+          method: "POST",
+          token,
+          body: { date: dateValue, delete: true },
+        });
+
+        if (!res.ok) {
+          alert("Error deleting entry: " + (data.error || res.status));
+          return;
+        }
+
+        await loadEntriesPage(token, false);
+      }
 
       async function loadEntriesPage(token, isNext) {
         const { start, end, year } = getNormalizedDateRange(startDateInput, endDateInput);
@@ -868,9 +865,9 @@ Your AI-generated performance review will appear here after you click "Generate 
 
           const repoName = item.repo_name || item.repo || "";
           const pr = item.pr_number || "";
-          let summary = item.summary || "";
+          const summary = item.summary || "";
           const prUrl = item.pr_url || item.url || "#";
-          const eventTs = item.event_ts || item.date || "";
+          const dateKey = item.date || item.event_ts;
 
           const li = document.createElement("li");
           li.style.display = "flex";
@@ -891,50 +888,46 @@ Your AI-generated performance review will appear here after you click "Generate 
             link.style.color = "inherit";
           }
 
-          const editBtn = document.createElement("button");
-          editBtn.textContent = "Edit";
-          editBtn.className = "btn btn-ghost btn-small";
-          editBtn.style.flex = "0 0 auto";
+          const actions = document.createElement("div");
+          actions.style.display = "flex";
+          actions.style.gap = "4px";
+          actions.style.flexShrink = "0";
 
-          editBtn.addEventListener("click", async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const current = summary;
-            const updated = prompt("Edit your summary:", current);
-            if (updated === null) return;
-
-            const trimmed = updated.trim();
-            if (!trimmed || trimmed === current) return;
-
-            const token = window.localStorage.getItem("idToken");
-            if (!token) {
-              alert("No token found, please sign in again.");
-              return;
-            }
-
-            const { res, data } = await apiFetch("/entries/update", {
-              method: "POST",
-              token,
-              body: {
-                event_ts: eventTs,
-                summary: trimmed,
-              },
+          if (dateKey) {
+            const editBtn = document.createElement("button");
+            editBtn.className = "btn btn-ghost btn-small";
+            editBtn.textContent = "Edit";
+            editBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const current = summary || "";
+              const next = window.prompt("Edit summary for this entry:", current);
+              if (next == null) return;
+              const trimmed = next.trim();
+              if (!trimmed) {
+                alert("Summary cannot be empty.");
+                return;
+              }
+              await updateEntry(dateKey, trimmed);
             });
 
-            console.log("/entries/update response:", data);
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "btn btn-ghost btn-small";
+            deleteBtn.textContent = "Delete";
+            deleteBtn.style.color = "rgba(248,113,113,0.9)";
+            deleteBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!window.confirm("Delete this entry? This cannot be undone.")) return;
+              await deleteEntry(dateKey);
+            });
 
-            if (!res.ok) {
-              alert("Error updating entry: " + (data.error || res.status));
-              return;
-            }
-
-            summary = trimmed;
-            link.textContent = `[${displayDate}] ${repoName} #${pr} – ${summary}`;
-          });
+            actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
+          }
 
           li.appendChild(link);
-          li.appendChild(editBtn);
+          li.appendChild(actions);
           entriesList.appendChild(li);
         });
 
@@ -1067,54 +1060,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // GitHub import
-      // -----------------------------
-      githubImportBtn.addEventListener("click", async () => {
-        const token = window.localStorage.getItem("idToken");
-        if (!token) {
-          alert("No token found, please sign in again.");
-          return;
-        }
-
-        const ghToken = (githubTokenInput.value || "").trim();
-        if (!ghToken) {
-          alert("Please paste a GitHub personal access token first.");
-          return;
-        }
-
-        const { start, end } = getNormalizedDateRange(startDateInput, endDateInput);
-        if (!start || !end) {
-          githubImportStatus.textContent =
-            "Please set both From and To dates before importing PRs.";
-          return;
-        }
-
-        githubImportStatus.textContent = "Importing PRs from GitHub…";
-
-        const { res, data } = await apiFetch("/github-import", {
-          method: "POST",
-          token,
-          body: {
-            github_token: ghToken,
-            start_date: start,
-            end_date: end,
-          },
-        });
-
-        console.log("/github-import response:", data);
-
-        if (!res.ok) {
-          githubImportStatus.textContent =
-            "Error importing PRs: " + (data.error || res.status);
-          return;
-        }
-
-        const count = data.imported_count ?? data.count ?? 0;
-        githubImportStatus.textContent = `Imported ${count} PRs from GitHub for this period.`;
-      });
-
-      // -----------------------------
-      // Minimal “bootstrap”
+      // Minimal “bootstrap” (wire up buttons)
       // -----------------------------
       function showAuthedUI() {
         entriesSection.style.display = "block";
