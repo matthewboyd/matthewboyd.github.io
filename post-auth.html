@@ -82,10 +82,46 @@
         white-space: nowrap;
       }
 
+      /* Tabs */
+
+      .tabs {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 999px;
+        border: 1px solid var(--card-border);
+        background: rgba(15, 23, 42, 0.9);
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        border-radius: 999px;
+        padding: 6px 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .tab-active {
+        background: rgba(15, 23, 42, 0.95);
+        color: var(--text-main);
+        border: 1px solid rgba(148, 163, 184, 0.45);
+      }
+
+      .tab-panels {
+        margin-top: 6px;
+      }
+
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 14px;
+      }
+
+      .grid[data-tab-panel="account"] {
+        grid-template-columns: 1fr;
       }
 
       @media (max-width: 900px) {
@@ -149,7 +185,7 @@
         padding: 9px 12px;
         cursor: pointer;
         font-size: 12px;
-        transition: transform 0.05s.ease;
+        transition: transform 0.05s ease;
       }
 
       .btn:active {
@@ -428,48 +464,23 @@
         <div class="app-pill">Logged in via Cognito · Secure by design</div>
       </header>
 
-      <div class="grid">
-        <!-- Left column -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Account & subscription</div>
-              <div class="card-subtitle">Manage billing, API keys and see your captured PR entries.</div>
-            </div>
-            <span id="subscription-badge" class="status-badge inactive">Checking…</span>
-          </div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab tab-active" data-tab="reviews">Reviews</button>
+        <button class="tab" data-tab="account">Account & API</button>
+      </div>
 
-          <div id="status" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"></div>
-
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
-              Start £0.99/month subscription
-            </button>
-            <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
-              Generate / Show API Key
-            </button>
-            <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
-              Revoke API Key
-            </button>
-            <button id="howto-extension-btn" class="btn btn-ghost btn-small" style="display:none;">
-              How to connect the Chrome extension
-            </button>
-          </div>
-
-          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-            Use your API key in the Chrome extension to log PR activity from GitHub.
-          </div>
-
-          <div class="section-label">API key</div>
-          <pre id="api-key-display">—</pre>
-
-          <hr />
-
-          <div id="entries-section" style="display: none;">
-            <div class="card-header" style="margin-bottom: 8px; padding: 0;">
+      <div class="tab-panels">
+        <!-- REVIEWS TAB -->
+        <div class="grid" data-tab-panel="reviews">
+          <!-- Left: entries + date range -->
+          <section class="card">
+            <div class="card-header">
               <div>
-                <div class="card-title" style="font-size: 14px;">Your PR entries</div>
-                <div class="card-subtitle">Captured each time you merge or approve a PR.</div>
+                <div class="card-title">Review period & entries</div>
+                <div class="card-subtitle">
+                  Choose your date range and inspect/edit the PR summaries we’ve captured.
+                </div>
               </div>
             </div>
 
@@ -491,7 +502,9 @@
               </div>
             </div>
 
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
+            <div
+              style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;"
+            >
               <button id="show-entries-btn" class="btn btn-secondary btn-small">
                 Load entries (20 per page)
               </button>
@@ -501,40 +514,49 @@
             </div>
 
             <ul id="entries-list"></ul>
-          </div>
-        </section>
+          </section>
 
-        <!-- Right column -->
-        <section id="review-section" class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Performance review generator</div>
-              <div class="card-subtitle">
-                Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
+          <!-- Right: performance review generator -->
+          <section id="review-section" class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Performance review generator</div>
+                <div class="card-subtitle">
+                  Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review
+                  from your PRs.
+                </div>
               </div>
+              <span id="subscription-badge" class="status-badge inactive">Checking…</span>
             </div>
-          </div>
 
-          <p id="review-spec-status" style="font-size:12px; color:var(--text-muted); margin-top:0;"></p>
+            <div
+              id="status"
+              style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"
+            ></div>
 
-          <button
-            id="edit-spec-btn"
-            class="btn btn-ghost btn-small"
-            style="display:none; margin-bottom:8px;"
-          >
-            Upload / replace specification
-          </button>
+            <p
+              id="review-spec-status"
+              style="font-size:12px; color:var(--text-muted); margin-top:0;"
+            ></p>
 
-          <div id="spec-upload-container" style="display: none; margin-top: 8px;">
-            <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
-              Paste your company’s levels &amp; expectations / performance rubric below.
-              This box is fully editable — we’ll store it privately and use it to guide your review.
-            </p>
+            <button
+              id="edit-spec-btn"
+              class="btn btn-ghost btn-small"
+              style="display:none; margin-bottom:8px;"
+            >
+              Upload / replace specification
+            </button>
 
-            <textarea
-              id="spec-text"
-              rows="8"
-              placeholder="Example:
+            <div id="spec-upload-container" style="display: none; margin-top: 8px;">
+              <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
+                Paste your company’s levels &amp; expectations / performance rubric below.
+                This box is fully editable — we’ll store it privately and use it to guide your review.
+              </p>
+
+              <textarea
+                id="spec-text"
+                rows="8"
+                placeholder="Example:
 L3 Engineer:
 - Delivers scoped features independently.
 - Writes well-tested, maintainable code...
@@ -542,42 +564,90 @@ L3 Engineer:
 L4 Engineer:
 - Owns end-to-end delivery of complex projects...
 (etc.)"
-            ></textarea>
+              ></textarea>
 
-            <button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
-              Save specification
-            </button>
-          </div>
-
-          <div class="date-range" style="margin-top: 12px;">
-            <div class="section-label">Review period</div>
-            <div class="date-helper">
-              We use the <strong>same date range</strong> as the entries filter on the left.
-              If empty, we use the current calendar year.
-            </div>
-          </div>
-
-          <div id="review-actions" style="display: none; margin-top: 8px;">
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-              <button id="generate-review-btn" class="btn btn-primary">Generate performance review</button>
-              <button id="regenerate-review-btn" class="btn btn-ghost btn-small">
-                Regenerate with latest entries
-              </button>
-              <button id="load-history-btn" class="btn btn-ghost btn-small">
-                Load historic reviews (this year)
+              <button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
+                Save specification
               </button>
             </div>
-            <div class="pill-inline">
-              Tip: you’re limited to a few generations per month. Update your spec anytime and regenerate.
-            </div>
-          </div>
 
-          <pre id="review-output">
+            <div class="date-range" style="margin-top: 12px;">
+              <div class="section-label">Review period</div>
+              <div class="date-helper">
+                We use the <strong>same date range</strong> as the entries filter on the left.
+                If empty, we use the current calendar year.
+              </div>
+            </div>
+
+            <div id="review-actions" style="display: none; margin-top: 8px;">
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                <button id="generate-review-btn" class="btn btn-primary">
+                  Generate performance review
+                </button>
+                <button id="regenerate-review-btn" class="btn btn-ghost btn-small">
+                  Regenerate with latest entries
+                </button>
+                <button id="load-history-btn" class="btn btn-ghost btn-small">
+                  Load historic reviews (this year)
+                </button>
+              </div>
+              <div class="pill-inline">
+                Tip: you’re limited to a few generations per month. Update your spec anytime and
+                regenerate.
+              </div>
+            </div>
+
+            <pre id="review-output">
 Your AI-generated performance review will appear here after you click "Generate performance review".
-          </pre>
+            </pre>
 
-          <ul id="history-list"></ul>
-        </section>
+            <ul id="history-list"></ul>
+          </section>
+        </div>
+
+        <!-- ACCOUNT TAB -->
+        <div class="grid" data-tab-panel="account" style="display:none;">
+          <section class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Account & subscription</div>
+                <div class="card-subtitle">
+                  Manage billing, API keys and see how to connect the Chrome extension.
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
+                Start £0.99/month subscription
+              </button>
+              <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
+                Generate / Show API Key
+              </button>
+              <button
+                id="revoke-api-key-btn"
+                class="btn btn-ghost btn-small"
+                style="display:none;"
+              >
+                Revoke API Key
+              </button>
+              <button
+                id="howto-extension-btn"
+                class="btn btn-ghost btn-small"
+                style="display:none;"
+              >
+                How to connect the Chrome extension
+              </button>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+              Use your API key in the Chrome extension to log PR activity from GitHub.
+            </div>
+
+            <div class="section-label">API key</div>
+            <pre id="api-key-display" style="display:none;">—</pre>
+          </section>
+        </div>
       </div>
 
       <!-- How-to overlay -->
@@ -594,18 +664,23 @@ Your AI-generated performance review will appear here after you click "Generate 
           <ul class="step-list">
             <li class="step-item">
               <div class="step-badge">1</div>
-              <div class="step-body"><strong>Install</strong> the extension.</div>
+              <div class="step-body">
+                <strong>Install</strong> the RapidReviewer Chrome extension and pin it from the puzzle
+                icon.
+              </div>
             </li>
             <li class="step-item">
               <div class="step-badge">2</div>
               <div class="step-body">
-                <strong>Paste your API key</strong> from the left panel into the extension settings.
+                <strong>Open extension options</strong> and paste the API key from the Account tab into
+                the <strong>API Key</strong> field.
               </div>
             </li>
             <li class="step-item">
               <div class="step-badge">3</div>
               <div class="step-body">
-                <strong>Use GitHub normally</strong> — merges and approvals will be captured automatically.
+                <strong>Use GitHub normally</strong> — merges and approvals will be captured
+                automatically.
               </div>
             </li>
           </ul>
@@ -630,13 +705,17 @@ Your AI-generated performance review will appear here after you click "Generate 
       const subscriptionBadge = document.getElementById("subscription-badge");
       const statusEl = document.getElementById("status");
 
+      const tabs = document.querySelectorAll(".tab");
+      const panels = document.querySelectorAll("[data-tab-panel]");
+
       const subscribeBtn = document.getElementById("subscribe-btn");
       const createApiKeyBtn = document.getElementById("create-api-key-btn");
       const revokeApiKeyBtn = document.getElementById("revoke-api-key-btn");
       const howtoBtn = document.getElementById("howto-extension-btn");
 
       const apiKeyDisplay = document.getElementById("api-key-display");
-      const entriesSection = document.getElementById("entries-section");
+
+      const entriesSection = document.getElementById("entries-section"); // (not used directly)
       const startDateInput = document.getElementById("review-start-date");
       const endDateInput = document.getElementById("review-end-date");
       const showEntriesBtn = document.getElementById("show-entries-btn");
@@ -659,6 +738,21 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       const howtoOverlay = document.getElementById("howto-overlay");
       const howtoClose = document.getElementById("howto-close");
+
+      // -----------------------------
+      // Tabs
+      // -----------------------------
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.getAttribute("data-tab");
+          tabs.forEach((t) => t.classList.remove("tab-active"));
+          tab.classList.add("tab-active");
+          panels.forEach((p) => {
+            const panelName = p.getAttribute("data-tab-panel");
+            p.style.display = panelName === target ? "" : "none";
+          });
+        });
+      });
 
       // -----------------------------
       // Auth token handling
@@ -720,7 +814,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // API helpers
+      // API helper
       // -----------------------------
       async function apiFetch(path, { method = "GET", token, body } = {}) {
         const headers = {};
@@ -760,7 +854,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       function renderReview(data) {
         const label = data.period_label || "";
         const cached = data.cached ? " (cached)" : "";
-        reviewOutput.textContent = `${label}${cached}\n\n${data.review_text || ""}`;
+        const header = label ? `${label}${cached}\n\n` : "";
+        reviewOutput.textContent = `${header}${data.review_text || ""}`;
       }
 
       // -----------------------------
@@ -843,14 +938,15 @@ Your AI-generated performance review will appear here after you click "Generate 
             link.style.color = "inherit";
           }
 
+          // EDIT BUTTON (restored)
           const editBtn = document.createElement("button");
           editBtn.textContent = "Edit";
           editBtn.className = "btn btn-ghost btn-small";
           editBtn.style.flex = "0 0 auto";
 
           editBtn.addEventListener("click", async (e) => {
-            e.stopPropagation();
             e.preventDefault();
+            e.stopPropagation();
 
             const current = summary;
             const updated = prompt("Edit your summary:", current);
@@ -864,23 +960,16 @@ Your AI-generated performance review will appear here after you click "Generate 
               return;
             }
 
-            const updateRes = await fetch(`${apiBase}/entries/update`, {
+            const { res, data } = await apiFetch("/entries/update", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                event_ts: eventTs,
-                summary: trimmed,
-              }),
+              token,
+              body: { event_ts: eventTs, summary: trimmed },
             });
 
-            const updateData = await updateRes.json().catch(() => ({}));
-            console.log("/entries/update response:", updateData);
+            console.log("/entries/update response:", data);
 
-            if (!updateRes.ok) {
-              alert("Error updating entry: " + (updateData.error || updateRes.status));
+            if (!res.ok) {
+              alert("Error updating entry: " + (data.error || res.status));
               return;
             }
 
@@ -1022,21 +1111,85 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Minimal “bootstrap”
+      // User init (/user/init)
       // -----------------------------
-      function showAuthedUI() {
-        entriesSection.style.display = "block";
-        reviewActions.style.display = "block";
-        createApiKeyBtn.style.display = "inline-block";
-        revokeApiKeyBtn.style.display = "inline-block";
-        howtoBtn.style.display = "inline-block";
-        editSpecBtn.style.display = "inline-block";
+      async function initUser(token) {
+        setStatus("Loading account...");
 
+        const { res, data } = await apiFetch("/user/init", {
+          method: "POST",
+          token,
+          body: {},
+        });
+
+        console.log("/user/init response:", data);
+
+        if (!res.ok) {
+          setStatus("Error: " + (data.error || res.status), true);
+          subscriptionBadge.textContent = "Error";
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+          return;
+        }
+
+        const subscriptionStatus = data.subscription_status || "inactive";
+        const hasApiKey = !!data.has_api_key;
+        const hasSpec = !!data.has_review_spec;
+
+        if (subscriptionStatus !== "active") {
+          setStatus("Subscription inactive. Start your £0.99/mo subscription in the Account tab.");
+          subscriptionBadge.textContent = "Inactive";
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
+          subscribeBtn.style.display = "inline-block";
+          createApiKeyBtn.style.display = "none";
+          revokeApiKeyBtn.style.display = "none";
+          howtoBtn.style.display = "none";
+          apiKeyDisplay.style.display = "none";
+
+          // Still let them paste spec so they can prep before paying
+          reviewSpecStatus.textContent =
+            "Step 1: Paste your levels & expectations below. " +
+            "You’ll need an active subscription to generate reviews.";
+          specUploadContainer.style.display = "block";
+          reviewActions.style.display = "none";
+          editSpecBtn.style.display = hasSpec ? "inline-block" : "none";
+          return;
+        }
+
+        // Active subscription
         subscriptionBadge.textContent = "Active";
         subscriptionBadge.classList.remove("inactive");
         subscriptionBadge.classList.add("active");
+        setStatus("Subscription active. Choose a date range and load your entries.");
 
-        setStatus("Welcome! Choose a date range and load your entries.");
+        subscribeBtn.style.display = "none";
+        createApiKeyBtn.style.display = "inline-block";
+
+        if (hasApiKey) {
+          createApiKeyBtn.textContent = "Show API Key";
+          revokeApiKeyBtn.style.display = "inline-block";
+          howtoBtn.style.display = "inline-block";
+        } else {
+          createApiKeyBtn.textContent = "Generate / Show API Key";
+          revokeApiKeyBtn.style.display = "none";
+          howtoBtn.style.display = "none";
+        }
+
+        if (hasSpec) {
+          reviewSpecStatus.textContent =
+            "Specification uploaded. You can generate a performance review below.";
+          specUploadContainer.style.display = "none";
+          reviewActions.style.display = "block";
+          editSpecBtn.style.display = "inline-block";
+        } else {
+          reviewSpecStatus.textContent =
+            "Step 1: Paste your levels & expectations below to enable performance review generation.";
+          specUploadContainer.style.display = "block";
+          reviewActions.style.display = "none";
+          editSpecBtn.style.display = "none";
+        }
       }
 
       // -----------------------------
@@ -1079,13 +1232,13 @@ Your AI-generated performance review will appear here after you click "Generate 
         const text = (specText.value || "").trim();
         if (!text) return alert("Please paste your specification first.");
 
-        const { res, data } = await apiFetch("/review-spec", {
+        const { res, data } = await apiFetch("/specs", {
           method: "POST",
           token,
-          body: { review_spec: text },
+          body: { spec_text: text },
         });
 
-        console.log("/review-spec response:", data);
+        console.log("/specs response:", data);
 
         if (!res.ok) {
           alert("Error saving spec: " + (data.error || res.status));
@@ -1094,8 +1247,98 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         reviewSpecStatus.textContent = "✅ Spec saved. You can now generate reviews.";
         specUploadContainer.style.display = "none";
+        reviewActions.style.display = "block";
+        editSpecBtn.style.display = "inline-block";
       });
 
+      // Stripe subscribe
+      subscribeBtn.addEventListener("click", async () => {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const { res, data } = await apiFetch("/billing/create-checkout-session", {
+          method: "POST",
+          token,
+          body: {},
+        });
+
+        console.log("/billing/create-checkout-session response:", data);
+
+        if (!res.ok || !data.checkout_url) {
+          alert("Error creating checkout session: " + (data.error || res.status));
+          return;
+        }
+
+        window.location = data.checkout_url;
+      });
+
+      // API key generation / show
+      createApiKeyBtn.addEventListener("click", async () => {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const { res, data } = await apiFetch("/apikey", {
+          method: "POST",
+          token,
+          body: { action: "get_or_create" },
+        });
+
+        console.log("/apikey response:", data);
+
+        if (!res.ok || !data.api_key) {
+          alert("Error generating API key: " + (data.error || res.status));
+          return;
+        }
+
+        apiKeyDisplay.style.display = "block";
+        apiKeyDisplay.textContent = "API Key (paste into extension):\n" + data.api_key;
+        createApiKeyBtn.textContent = "Show API Key";
+        revokeApiKeyBtn.style.display = "inline-block";
+        howtoBtn.style.display = "inline-block";
+      });
+
+      revokeApiKeyBtn.addEventListener("click", async () => {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        if (
+          !confirm(
+            "Revoke your current API key? Your extension will stop working until you generate a new one.",
+          )
+        ) {
+          return;
+        }
+
+        const { res, data } = await apiFetch("/apikey", {
+          method: "POST",
+          token,
+          body: { action: "revoke" },
+        });
+
+        console.log("/apikey revoke response:", data);
+
+        if (!res.ok) {
+          alert("Error revoking API key: " + (data.error || res.status));
+          return;
+        }
+
+        apiKeyDisplay.style.display = "block";
+        apiKeyDisplay.textContent = "API key revoked.";
+        createApiKeyBtn.textContent = "Generate / Show API Key";
+        revokeApiKeyBtn.style.display = "none";
+        howtoBtn.style.display = "none";
+      });
+
+      // How-to overlay
       howtoBtn.addEventListener("click", () => {
         howtoOverlay.style.display = "flex";
       });
@@ -1112,15 +1355,15 @@ Your AI-generated performance review will appear here after you click "Generate 
       // Init
       // -----------------------------
       persistTokenFromUrl();
-
       const token = window.localStorage.getItem("idToken");
+
       if (!token) {
         setStatus("No token found. Please sign in again.", true);
         subscriptionBadge.textContent = "Not signed in";
         subscriptionBadge.classList.remove("active");
         subscriptionBadge.classList.add("inactive");
       } else {
-        showAuthedUI();
+        initUser(token);
       }
     </script>
   </body>
