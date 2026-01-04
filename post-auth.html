@@ -306,7 +306,7 @@
         border-radius: 999px;
       }
 
-      /* How-to overlay */
+      /* Overlays (extension + GitHub help) */
       .howto-overlay {
         position: fixed;
         inset: 0;
@@ -400,7 +400,6 @@
         color: var(--text-muted);
       }
 
-      /* History list meta */
       .history-meta {
         flex: 1 1 auto;
       }
@@ -440,6 +439,26 @@
         font-size: 11px;
         color: var(--text-muted);
         margin-top: 6px;
+      }
+
+      .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        font-size: 11px;
+        margin-left: 6px;
+        cursor: pointer;
+        color: var(--text-muted);
+        background: rgba(15, 23, 42, 0.9);
+      }
+
+      .info-icon:hover {
+        border-color: var(--accent);
+        color: var(--accent);
       }
     </style>
   </head>
@@ -535,7 +554,10 @@
             <div id="github-import-section">
               <div class="card-header" style="padding: 0; margin-bottom: 6px;">
                 <div>
-                  <div class="card-title" style="font-size: 14px;">GitHub import (beta)</div>
+                  <div class="card-title" style="font-size: 14px;">
+                    GitHub import (beta)
+                    <button id="github-howto-btn" class="info-icon" title="How to get a GitHub token">i</button>
+                  </div>
                   <div class="card-subtitle">
                     Pull PRs from GitHub into RapidReviewer using the same date range above.
                   </div>
@@ -639,7 +661,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         </section>
       </div>
 
-      <!-- How-to overlay -->
+      <!-- How-to overlay: Chrome extension -->
       <div id="howto-overlay" class="howto-overlay">
         <div class="howto-card">
           <div class="howto-header">
@@ -675,6 +697,56 @@ Your AI-generated performance review will appear here after you click "Generate 
           </div>
         </div>
       </div>
+
+      <!-- How-to overlay: GitHub token -->
+      <div id="github-howto-overlay" class="howto-overlay">
+        <div class="howto-card">
+          <div class="howto-header">
+            <div>
+              <div class="howto-title">How to get a GitHub token</div>
+              <div class="howto-subtitle">
+                Use this token so RapidReviewer can import your PRs.
+              </div>
+            </div>
+            <button id="github-howto-close" class="howto-close" aria-label="Close">×</button>
+          </div>
+
+          <ul class="step-list">
+            <li class="step-item">
+              <div class="step-badge">1</div>
+              <div class="step-body">
+                In GitHub, click your avatar → <strong>Settings</strong> → <strong>Developer settings</strong>.
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-badge">2</div>
+              <div class="step-body">
+                Go to <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> (or classic).
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-badge">3</div>
+              <div class="step-body">
+                <strong>Create a new token</strong> with access to the repos you want to import from.
+                You only need read access to PRs.
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-badge">4</div>
+              <div class="step-body">
+                Copy the token (looks like <code>ghp_…</code>) and paste it into the
+                <strong>GitHub token</strong> field on the left, then click
+                <strong>Import PRs from GitHub</strong>.
+              </div>
+            </li>
+          </ul>
+
+          <div class="howto-footer">
+            <div>Keep your token secret. You can always revoke it from GitHub settings.</div>
+            <div>RapidReviewer</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -706,6 +778,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubTokenInput = document.getElementById("github-token-input");
       const githubImportBtn = document.getElementById("github-import-btn");
       const githubImportStatus = document.getElementById("github-import-status");
+      const githubHowtoBtn = document.getElementById("github-howto-btn");
 
       const reviewSpecStatus = document.getElementById("review-spec-status");
       const editSpecBtn = document.getElementById("edit-spec-btn");
@@ -722,6 +795,9 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       const howtoOverlay = document.getElementById("howto-overlay");
       const howtoClose = document.getElementById("howto-close");
+
+      const githubHowtoOverlay = document.getElementById("github-howto-overlay");
+      const githubHowtoClose = document.getElementById("github-howto-close");
 
       // -----------------------------
       // Auth token handling
@@ -827,7 +903,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Account + API key helpers
+      // API key helpers (POST /apikey)
       // -----------------------------
       async function loadApiKey() {
         const token = window.localStorage.getItem("idToken");
@@ -839,15 +915,16 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         apiKeyDisplay.textContent = "Loading…";
 
-        const { res, data } = await apiFetch("/api-key", {
-          method: "GET",
+        const { res, data } = await apiFetch("/apikey", {
+          method: "POST",
           token,
+          body: { action: "get_or_create" },
         });
 
-        if (res.status === 404) {
-          apiKeyDisplay.textContent = "No API key yet. Click “Generate / Show API Key”.";
-          createApiKeyBtn.style.display = "inline-block";
-          revokeApiKeyBtn.style.display = "none";
+        if (res.status === 402) {
+          apiKeyDisplay.textContent =
+            "Subscription not active. Start your subscription to generate an API key.";
+          setStatus("Subscription not active. Please subscribe to generate an API key.", true);
           return;
         }
 
@@ -870,29 +947,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       async function createOrShowApiKey() {
-        const token = window.localStorage.getItem("idToken");
-        if (!token) {
-          alert("No token found, please sign in again.");
-          return;
-        }
-
-        apiKeyDisplay.textContent = "Generating API key…";
-
-        const { res, data } = await apiFetch("/api-key", {
-          method: "POST",
-          token,
-        });
-
-        if (!res.ok) {
-          apiKeyDisplay.textContent = "Error generating API key.";
-          alert("Error generating API key: " + (data.error || res.status));
-          return;
-        }
-
-        const key = data.api_key || data.key || "";
-        apiKeyDisplay.textContent = key || "(no key returned)";
-        createApiKeyBtn.style.display = "inline-block";
-        revokeApiKeyBtn.style.display = "inline-block";
+        await loadApiKey();
       }
 
       async function revokeApiKeyHandler() {
@@ -902,21 +957,27 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        if (!window.confirm("Revoke your API key? Your extension will stop working until you generate a new one.")) {
+        if (
+          !window.confirm(
+            "Revoke your API key? Your extension will stop working until you generate a new one."
+          )
+        ) {
           return;
         }
 
-        const { res, data } = await apiFetch("/api-key", {
-          method: "DELETE",
+        const { res, data } = await apiFetch("/apikey", {
+          method: "POST",
           token,
+          body: { action: "revoke" },
         });
 
-        if (!res.ok && res.status !== 204) {
+        if (!res.ok) {
           alert("Error revoking API key: " + (data.error || res.status));
           return;
         }
 
-        apiKeyDisplay.textContent = "API key revoked. Click “Generate / Show API Key” to create a new one.";
+        apiKeyDisplay.textContent =
+          "API key revoked. Click “Generate / Show API Key” to create a new one.";
         createApiKeyBtn.style.display = "inline-block";
         revokeApiKeyBtn.style.display = "none";
       }
@@ -1090,7 +1151,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // GitHub import (uses same date range)
+      // GitHub import
       // -----------------------------
       async function importFromGitHub() {
         const token = window.localStorage.getItem("idToken");
@@ -1269,13 +1330,13 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Minimal “bootstrap” (wire up buttons)
+      // Minimal bootstrap
       // -----------------------------
       function showAuthedUI() {
         entriesSection.style.display = "block";
         reviewActions.style.display = "block";
         createApiKeyBtn.style.display = "inline-block";
-        revokeApiKeyBtn.style.display = "none";
+        revokeApiKeyBtn.style.display = "inline-block";
         howtoBtn.style.display = "inline-block";
         editSpecBtn.style.display = "inline-block";
 
@@ -1347,6 +1408,14 @@ Your AI-generated performance review will appear here after you click "Generate 
         specUploadContainer.style.display = "none";
       });
 
+      createApiKeyBtn.addEventListener("click", async () => {
+        await createOrShowApiKey();
+      });
+
+      revokeApiKeyBtn.addEventListener("click", async () => {
+        await revokeApiKeyHandler();
+      });
+
       howtoBtn.addEventListener("click", () => {
         howtoOverlay.style.display = "flex";
       });
@@ -1359,12 +1428,16 @@ Your AI-generated performance review will appear here after you click "Generate 
         if (e.target === howtoOverlay) howtoOverlay.style.display = "none";
       });
 
-      createApiKeyBtn.addEventListener("click", async () => {
-        await createOrShowApiKey();
+      githubHowtoBtn.addEventListener("click", () => {
+        githubHowtoOverlay.style.display = "flex";
       });
 
-      revokeApiKeyBtn.addEventListener("click", async () => {
-        await revokeApiKeyHandler();
+      githubHowtoClose.addEventListener("click", () => {
+        githubHowtoOverlay.style.display = "none";
+      });
+
+      githubHowtoOverlay.addEventListener("click", (e) => {
+        if (e.target === githubHowtoOverlay) githubHowtoOverlay.style.display = "none";
       });
 
       // -----------------------------
