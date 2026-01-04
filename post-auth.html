@@ -462,32 +462,6 @@
         border-color: var(--accent);
         color: var(--accent);
       }
-
-      /* NEW: screenshot layout inside how-to overlays */
-      .howto-screenshot-grid {
-        margin-top: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .howto-screenshot-block {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .howto-screenshot-block strong {
-        color: #e5e7eb;
-      }
-
-      .howto-screenshot {
-        margin-top: 4px;
-        width: 100%;
-        border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.7);
-        display: block;
-      }
     </style>
   </head>
 
@@ -727,17 +701,6 @@ Your AI-generated performance review will appear here after you click "Generate 
             </li>
           </ul>
 
-          <div class="howto-screenshot-grid">
-            <div class="howto-screenshot-block">
-              <strong>Screenshot:</strong> Chrome Web Store entry for RapidReviewer.
-              <img
-                src="chrome-extension-store.png"
-                alt="Chrome Web Store page for RapidReviewer extension"
-                class="howto-screenshot"
-              />
-            </div>
-          </div>
-
           <div class="howto-footer">
             <div>Need help? Reply to the welcome email.</div>
             <div>RapidReviewer</div>
@@ -796,33 +759,6 @@ Your AI-generated performance review will appear here after you click "Generate 
               </div>
             </li>
           </ul>
-
-          <div class="howto-screenshot-grid">
-            <div class="howto-screenshot-block">
-              <strong>Screenshot 1:</strong> GitHub settings → Developer settings → Personal access tokens.
-              <img
-                src="github-token-step1.png"
-                alt="GitHub settings page showing how to reach personal access tokens"
-                class="howto-screenshot"
-              />
-            </div>
-            <div class="howto-screenshot-block">
-              <strong>Screenshot 2:</strong> Token scopes screen showing repo read permissions.
-              <img
-                src="github-token-step2.png"
-                alt="GitHub token scopes selection screenshot"
-                class="howto-screenshot"
-              />
-            </div>
-            <div class="howto-screenshot-block">
-              <strong>Screenshot 3:</strong> Copy the generated <code>ghp_…</code> token.
-              <img
-                src="github-token-step3.png"
-                alt="GitHub token generated screen"
-                class="howto-screenshot"
-              />
-            </div>
-          </div>
 
           <div class="howto-footer">
             <div>Never commit your token. Paste it only into trusted tools like RapidReviewer.</div>
