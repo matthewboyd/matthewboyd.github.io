@@ -754,8 +754,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       // CONFIG
       // -----------------------------
       const apiBase = "https://api.rapidreviewer.io";
-      // Adjust this path if your Lambda for creating Stripe Checkout sessions has a different route.
-      const stripeCheckoutPath = "/billing/create-checkout-session";
+      // Your existing Lambda is behind POST /billing and returns { checkout_url: "..." }
+      const stripeCheckoutPath = "/billing";
 
       // -----------------------------
       // DOM refs
@@ -802,7 +802,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubHowtoClose = document.getElementById("github-howto-close");
 
       // -----------------------------
-      // Auth token handling
+      // Auth token + hash handling
       // -----------------------------
       function parseHashParams() {
         const hash = window.location.hash || "";
@@ -816,12 +816,14 @@ Your AI-generated performance review will appear here after you click "Generate 
         return out;
       }
 
+      // Persist id_token (if Cognito redirect) and return hash params (for billing)
       function persistTokenFromUrl() {
         const hashParams = parseHashParams();
         if (hashParams.id_token) {
           window.localStorage.setItem("idToken", hashParams.id_token);
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
+        return hashParams;
       }
 
       // -----------------------------
@@ -904,42 +906,8 @@ Your AI-generated performance review will appear here after you click "Generate 
         reviewOutput.textContent = `${label}${cached}\n\n${data.review_text || ""}`;
       }
 
-      function showActiveSubscriptionUI() {
-        subscriptionBadge.textContent = "Active";
-        subscriptionBadge.classList.remove("inactive");
-        subscriptionBadge.classList.add("active");
-
-        subscribeBtn.style.display = "none";
-        createApiKeyBtn.style.display = "inline-block";
-        revokeApiKeyBtn.style.display = "inline-block";
-        howtoBtn.style.display = "inline-block";
-        editSpecBtn.style.display = "inline-block";
-
-        entriesSection.style.display = "block";
-        reviewActions.style.display = "block";
-
-        setStatus("Subscription active. You’re good to go!");
-      }
-
-      function showUnsubscribedUI(message) {
-        subscriptionBadge.classList.remove("active");
-        subscriptionBadge.classList.add("inactive");
-
-        subscribeBtn.style.display = "inline-block";
-        createApiKeyBtn.style.display = "none";
-        revokeApiKeyBtn.style.display = "none";
-        howtoBtn.style.display = "none";
-        editSpecBtn.style.display = "none";
-
-        // Optionally hide features until they subscribe
-        entriesSection.style.display = "none";
-        reviewActions.style.display = "none";
-
-        apiKeyDisplay.textContent = message;
-      }
-
       // -----------------------------
-      // Stripe redirect
+      // Stripe checkout redirect
       // -----------------------------
       async function redirectToStripeCheckout(reason) {
         const token = window.localStorage.getItem("idToken");
@@ -956,7 +924,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           body: { reason: reason || "subscription_required" },
         });
 
-        if (!res.ok || !data || !data.url) {
+        if (!res.ok || !data || !data.checkout_url) {
           setStatus(
             "Error starting checkout. Please click “Start £0.99/month subscription” again or contact support.",
             true
@@ -964,15 +932,22 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        window.location.href = data.url;
+        window.location.href = data.checkout_url;
       }
 
       // -----------------------------
       // API key helpers (POST /apikey)
       // -----------------------------
-      async function loadApiKey() {
+      async function loadApiKey(options = {}) {
+        const { autoRedirectIfInactive } = options;
         const token = window.localStorage.getItem("idToken");
         if (!token) return;
+
+        // Start in a neutral state
+        subscribeBtn.style.display = "none";
+        createApiKeyBtn.style.display = "none";
+        revokeApiKeyBtn.style.display = "none";
+        howtoBtn.style.display = "inline-block";
 
         apiKeyDisplay.textContent = "Loading…";
 
@@ -982,24 +957,44 @@ Your AI-generated performance review will appear here after you click "Generate 
           body: { action: "get_or_create" },
         });
 
-        // Unsubscribed / no user: push to Stripe
         if (res.status === 402) {
           // subscription_not_active
           subscriptionBadge.textContent = "Subscription inactive";
-          showUnsubscribedUI(
-            "Subscription not active. We’ll redirect you to Stripe to start your subscription."
-          );
-          await redirectToStripeCheckout("subscription_not_active");
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
+          apiKeyDisplay.textContent =
+            "Subscription not active. We’ll take you to Stripe to start your £0.99/month plan.";
+          subscribeBtn.style.display = "inline-block";
+          createApiKeyBtn.style.display = "none";
+          revokeApiKeyBtn.style.display = "none";
+
+          setStatus("Subscription not active. Redirecting you to Stripe…", true);
+
+          if (autoRedirectIfInactive) {
+            await redirectToStripeCheckout("subscription_required");
+          } else {
+            setStatus(
+              "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.",
+              true
+            );
+          }
           return;
         }
 
         if (res.status === 404) {
           // user_not_found
           subscriptionBadge.textContent = "No account";
-          showUnsubscribedUI(
-            "We couldn't find your user record. We’ll redirect you to Stripe to set up billing."
-          );
-          await redirectToStripeCheckout("user_not_found");
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
+          apiKeyDisplay.textContent =
+            "We couldn't find your user record. Please sign up again or contact support.";
+          subscribeBtn.style.display = "none";
+          createApiKeyBtn.style.display = "none";
+          revokeApiKeyBtn.style.display = "none";
+
+          setStatus("No user found for this login. Try signing up again.", true);
           return;
         }
 
@@ -1009,25 +1004,35 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscriptionBadge.classList.add("inactive");
 
           apiKeyDisplay.textContent = "Error loading API key.";
+          subscribeBtn.style.display = "none";
+          createApiKeyBtn.style.display = "none";
+          revokeApiKeyBtn.style.display = "none";
+
           setStatus("Error loading API key: " + (data.error || res.status), true);
           return;
         }
 
         // At this point subscription is active
-        showActiveSubscriptionUI();
+        subscriptionBadge.textContent = "Active";
+        subscriptionBadge.classList.remove("inactive");
+        subscriptionBadge.classList.add("active");
 
         const key = data.api_key || data.key || "";
+        subscribeBtn.style.display = "none";
+        createApiKeyBtn.style.display = "inline-block";
+        revokeApiKeyBtn.style.display = "inline-block";
+
         if (key) {
           apiKeyDisplay.textContent = key;
         } else {
           apiKeyDisplay.textContent = "No API key yet. Click “Generate / Show API Key”.";
-          // First time active subscriber – show button to create key
-          revokeApiKeyBtn.style.display = "none";
         }
+
+        setStatus("Subscription active. You’re good to go.");
       }
 
       async function createOrShowApiKey() {
-        await loadApiKey();
+        await loadApiKey({ autoRedirectIfInactive: false });
       }
 
       async function revokeApiKeyHandler() {
@@ -1056,12 +1061,17 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // Subscription is still active, just no key
-        showActiveSubscriptionUI();
-        revokeApiKeyBtn.style.display = "none";
+        // Subscription is still active, you've just revoked the key
+        subscriptionBadge.textContent = "Active";
+        subscriptionBadge.classList.remove("inactive");
+        subscriptionBadge.classList.add("active");
 
         apiKeyDisplay.textContent =
           "API key revoked. Click “Generate / Show API Key” to create a new one.";
+        createApiKeyBtn.style.display = "inline-block";
+        revokeApiKeyBtn.style.display = "none";
+
+        setStatus("API key revoked. Generate a new one if needed.");
       }
 
       // -----------------------------
@@ -1415,10 +1425,20 @@ Your AI-generated performance review will appear here after you click "Generate 
       // Minimal bootstrap
       // -----------------------------
       function showAuthedUI() {
-        // Only show "checking" – actual feature toggling happens after /apikey result
+        entriesSection.style.display = "block";
+        reviewActions.style.display = "block";
+
+        // Don't assume subscription state yet
+        subscribeBtn.style.display = "none";
+        createApiKeyBtn.style.display = "none";
+        revokeApiKeyBtn.style.display = "none";
+        howtoBtn.style.display = "inline-block";
+        editSpecBtn.style.display = "inline-block";
+
         subscriptionBadge.textContent = "Checking…";
         subscriptionBadge.classList.remove("active");
         subscriptionBadge.classList.add("inactive");
+
         setStatus("Welcome! Checking your subscription status…");
       }
 
@@ -1491,6 +1511,10 @@ Your AI-generated performance review will appear here after you click "Generate 
         await revokeApiKeyHandler();
       });
 
+      subscribeBtn.addEventListener("click", async () => {
+        await redirectToStripeCheckout("subscription_required");
+      });
+
       howtoBtn.addEventListener("click", () => {
         howtoOverlay.style.display = "flex";
       });
@@ -1515,14 +1539,11 @@ Your AI-generated performance review will appear here after you click "Generate 
         if (e.target === githubHowtoOverlay) githubHowtoOverlay.style.display = "none";
       });
 
-      subscribeBtn.addEventListener("click", async () => {
-        await redirectToStripeCheckout("subscribe_button_click");
-      });
-
       // -----------------------------
       // Init
       // -----------------------------
-      persistTokenFromUrl();
+      const hashParams = persistTokenFromUrl();
+      const billingStatus = hashParams.billing || null;
 
       const token = window.localStorage.getItem("idToken");
       if (!token) {
@@ -1532,7 +1553,20 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
       } else {
         showAuthedUI();
-        loadApiKey();
+
+        if (billingStatus === "success") {
+          setStatus("Payment successful. Finalising your subscription…");
+          loadApiKey({ autoRedirectIfInactive: false });
+        } else if (billingStatus === "cancel") {
+          setStatus(
+            "You cancelled checkout. Click “Start £0.99/month subscription” to try again.",
+            true
+          );
+          loadApiKey({ autoRedirectIfInactive: false });
+        } else {
+          // Normal case: first login or returning user
+          loadApiKey({ autoRedirectIfInactive: true });
+        }
       }
     </script>
   </body>
