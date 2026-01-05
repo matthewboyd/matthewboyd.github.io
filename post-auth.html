@@ -493,6 +493,9 @@
             <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
               Start £0.99/month subscription
             </button>
+            <button id="cancel-subscription-btn" class="btn btn-ghost btn-small" style="display:none;">
+              Cancel subscription
+            </button>
             <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
               Generate / Show API Key
             </button>
@@ -754,8 +757,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       // CONFIG
       // -----------------------------
       const apiBase = "https://api.rapidreviewer.io";
-      const stripeCheckoutPath = "/billing/create-checkout-session";   // your existing /billing/ lambda
-      const userInitPath = "/user/init";        // your existing user init lambda
+      const stripeCheckoutPath = "/billing/create-stripe-checkout"; // OLD path, existing lambda
+      const stripeCancelPath   = "/billing/cancel-subscription";
+      const userInitPath = "/user/init";
 
       // -----------------------------
       // DOM refs
@@ -764,6 +768,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       const statusEl = document.getElementById("status");
 
       const subscribeBtn = document.getElementById("subscribe-btn");
+      const cancelSubscriptionBtn = document.getElementById("cancel-subscription-btn");
       const createApiKeyBtn = document.getElementById("create-api-key-btn");
       const revokeApiKeyBtn = document.getElementById("revoke-api-key-btn");
       const howtoBtn = document.getElementById("howto-extension-btn");
@@ -893,7 +898,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       function computeMonthAndDate(item) {
         const ts = item.event_ts || item.date || "";
         const d = ts ? new Date(ts) : new Date();
-        const monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
+        the monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
         const displayDate = d.toLocaleDateString(undefined, {
           day: "2-digit",
           month: "2-digit",
@@ -914,6 +919,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("active");
 
         subscribeBtn.style.display = "none";
+        cancelSubscriptionBtn.style.display = "inline-block";
         createApiKeyBtn.style.display = "inline-block";
         revokeApiKeyBtn.style.display = "inline-block";
         howtoBtn.style.display = "inline-block";
@@ -931,6 +937,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
 
         subscribeBtn.style.display = "inline-block";
+        cancelSubscriptionBtn.style.display = "none";
         createApiKeyBtn.style.display = "none";
         revokeApiKeyBtn.style.display = "none";
         howtoBtn.style.display = "none";
@@ -950,6 +957,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
 
         subscribeBtn.style.display = "none";
+        cancelSubscriptionBtn.style.display = "none";
         createApiKeyBtn.style.display = "none";
         revokeApiKeyBtn.style.display = "none";
         howtoBtn.style.display = "none";
@@ -963,7 +971,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Stripe checkout
+      // Stripe checkout + cancel
       // -----------------------------
       async function redirectToStripeCheckout() {
         const token = window.localStorage.getItem("idToken");
@@ -991,6 +999,39 @@ Your AI-generated performance review will appear here after you click "Generate 
         window.location.href = data.checkout_url;
       }
 
+      async function cancelSubscriptionHandler() {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) {
+          alert("No token found, please sign in again.");
+          return;
+        }
+
+        const confirmed = window.confirm(
+          "Cancel your subscription? You won't be charged again. You may lose access after the current period."
+        );
+        if (!confirmed) return;
+
+        setStatus("Cancelling your subscription…");
+
+        const { res, data } = await apiFetch(stripeCancelPath, {
+          method: "POST",
+          token,
+        });
+
+        console.log("/billing/cancel-subscription response:", data);
+
+        if (!res.ok) {
+          setStatus(
+            "Error cancelling subscription: " + (data.error || data.message || res.status),
+            true
+          );
+          return;
+        }
+
+        setUnsubscribedUI("Subscription cancelled. You won’t be billed again.");
+        setStatus("Subscription cancelled. You won’t be billed again.");
+      }
+
       // -----------------------------
       // User bootstrap via /user/init
       // -----------------------------
@@ -1013,7 +1054,6 @@ Your AI-generated performance review will appear here after you click "Generate 
             return null;
           }
 
-          // support { user: {...} } or plain user
           const user = data.user || data;
           cachedUser = user;
           return user;
@@ -1042,6 +1082,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
 
         subscribeBtn.style.display = "none";
+        cancelSubscriptionBtn.style.display = "none";
         createApiKeyBtn.style.display = "none";
         revokeApiKeyBtn.style.display = "none";
         howtoBtn.style.display = "none";
@@ -1052,7 +1093,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         apiKeyDisplay.textContent = "Loading…";
         setStatus("Checking your account and subscription…");
 
-        // 1) Ensure user exists & get subscription_status
         const user = await syncUserFromInit();
 
         if (!user) {
@@ -1072,7 +1112,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // 2) Subscription is active -> load or create API key
         const { res, data } = await apiFetch("/apikey", {
           method: "POST",
           token,
@@ -1106,7 +1145,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // 3) Everything OK: show app + key
         setSubscribedUI();
 
         const key = data.api_key || data.key || "";
@@ -1144,7 +1182,6 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // Subscription still active; just clear the key
         apiKeyDisplay.textContent =
           "API key revoked. Click “Generate / Show API Key” to create a new one.";
         createApiKeyBtn.style.display = "inline-block";
@@ -1571,6 +1608,10 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       subscribeBtn.addEventListener("click", async () => {
         await redirectToStripeCheckout();
+      });
+
+      cancelSubscriptionBtn.addEventListener("click", async () => {
+        await cancelSubscriptionHandler();
       });
 
       howtoBtn.addEventListener("click", () => {
