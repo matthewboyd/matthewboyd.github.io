@@ -754,7 +754,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       // CONFIG
       // -----------------------------
       const apiBase = "https://api.rapidreviewer.io";
-      const stripeCheckoutPath = "/billing"; // or "/billing/" depending on your API route
+      const stripeCheckoutPath = "/billing/";   // your existing /billing/ lambda
+      const userInitPath = "/user/init";        // your existing user init lambda
 
       // -----------------------------
       // DOM refs
@@ -801,7 +802,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubHowtoClose = document.getElementById("github-howto-close");
 
       // -----------------------------
-      // Auth token handling
+      // Auth token + hash handling
       // -----------------------------
       function parseHashParams() {
         const hash = window.location.hash || "";
@@ -809,6 +810,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         if (!hash.startsWith("#")) return out;
         const qs = hash.slice(1);
         for (const part of qs.split("&")) {
+          if (!part) continue;
           const [k, v] = part.split("=");
           if (k) out[decodeURIComponent(k)] = decodeURIComponent(v || "");
         }
@@ -816,11 +818,14 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       function persistTokenFromUrl() {
-        const hashParams = parseHashParams();
-        if (hashParams.id_token) {
-          window.localStorage.setItem("idToken", hashParams.id_token);
+        const params = parseHashParams();
+        if (params.id_token) {
+          window.localStorage.setItem("idToken", params.id_token);
+        }
+        if (Object.keys(params).length > 0) {
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
+        return params;
       }
 
       // -----------------------------
@@ -885,6 +890,24 @@ Your AI-generated performance review will appear here after you click "Generate 
         statusEl.style.color = isError ? "rgba(239,68,68,0.95)" : "var(--text-muted)";
       }
 
+      function computeMonthAndDate(item) {
+        const ts = item.event_ts || item.date || "";
+        const d = ts ? new Date(ts) : new Date();
+        const monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
+        const displayDate = d.toLocaleDateString(undefined, {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+        return { monthKey, displayDate };
+      }
+
+      function renderReview(data) {
+        const label = data.period_label || "";
+        const cached = data.cached ? " (cached)" : "";
+        reviewOutput.textContent = `${label}${cached}\n\n${data.review_text || ""}`;
+      }
+
       function setSubscribedUI() {
         subscriptionBadge.textContent = "Active";
         subscriptionBadge.classList.remove("inactive");
@@ -898,9 +921,11 @@ Your AI-generated performance review will appear here after you click "Generate 
         entriesSection.style.display = "block";
         reviewActions.style.display = "block";
         editSpecBtn.style.display = "inline-block";
+
+        setStatus("Subscription active. You’re good to go.");
       }
 
-      function setUnsubscribedUI(reasonText) {
+      function setUnsubscribedUI(message) {
         subscriptionBadge.textContent = "Subscription inactive";
         subscriptionBadge.classList.remove("active");
         subscriptionBadge.classList.add("inactive");
@@ -915,7 +940,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         editSpecBtn.style.display = "none";
 
         apiKeyDisplay.textContent =
-          reasonText ||
+          message ||
           "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.";
       }
 
@@ -934,25 +959,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         editSpecBtn.style.display = "none";
 
         apiKeyDisplay.textContent =
-          "We couldn't find your user record. Please sign up again or contact support.";
-      }
-
-      function computeMonthAndDate(item) {
-        const ts = item.event_ts || item.date || "";
-        const d = ts ? new Date(ts) : new Date();
-        const monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
-        const displayDate = d.toLocaleDateString(undefined, {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-        return { monthKey, displayDate };
-      }
-
-      function renderReview(data) {
-        const label = data.period_label || "";
-        const cached = data.cached ? " (cached)" : "";
-        reviewOutput.textContent = `${label}${cached}\n\n${data.review_text || ""}`;
+          "We couldn't find your user record. Please sign up again via Cognito or contact support.";
       }
 
       // -----------------------------
@@ -985,7 +992,40 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // API key & subscription check
+      // User bootstrap via /user/init
+      // -----------------------------
+      let cachedUser = null;
+
+      async function syncUserFromInit() {
+        const token = window.localStorage.getItem("idToken");
+        if (!token) return null;
+
+        try {
+          const { res, data } = await apiFetch(userInitPath, {
+            method: "POST",
+            token,
+          });
+
+          console.log("/user/init response:", data);
+
+          if (!res.ok) {
+            setStatus("Error loading account: " + (data.error || res.status), true);
+            return null;
+          }
+
+          // support { user: {...} } or plain user
+          const user = data.user || data;
+          cachedUser = user;
+          return user;
+        } catch (e) {
+          console.error("Error calling /user/init:", e);
+          setStatus("Unexpected error loading account.", true);
+          return null;
+        }
+      }
+
+      // -----------------------------
+      // Subscription + API key flow
       // -----------------------------
       async function checkSubscriptionAndLoadApiKey() {
         const token = window.localStorage.getItem("idToken");
@@ -1010,16 +1050,20 @@ Your AI-generated performance review will appear here after you click "Generate 
         editSpecBtn.style.display = "none";
 
         apiKeyDisplay.textContent = "Loading…";
-        setStatus("Checking your subscription status…");
+        setStatus("Checking your account and subscription…");
 
-        const { res, data } = await apiFetch("/apikey", {
-          method: "POST",
-          token,
-          body: { action: "get_or_create" },
-        });
+        // 1) Ensure user exists & get subscription_status
+        const user = await syncUserFromInit();
 
-        if (res.status === 402) {
-          // subscription_not_active
+        if (!user) {
+          setNoUserUI();
+          return;
+        }
+
+        const subStatus =
+          user.subscription_status || user.subscriptionStatus || user.subscription || "";
+
+        if (subStatus !== "active") {
           setUnsubscribedUI();
           setStatus(
             "Subscription not active. Click the subscription button to go to Stripe and start your plan.",
@@ -1028,10 +1072,27 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
+        // 2) Subscription is active -> load or create API key
+        const { res, data } = await apiFetch("/apikey", {
+          method: "POST",
+          token,
+          body: { action: "get_or_create" },
+        });
+
+        console.log("/apikey response:", data);
+
         if (res.status === 404) {
-          // user_not_found
           setNoUserUI();
-          setStatus("No user found for this login. Try signing up again.", true);
+          setStatus("No user found for this login. Please sign up again or contact support.", true);
+          return;
+        }
+
+        if (res.status === 402) {
+          setUnsubscribedUI();
+          setStatus(
+            "Subscription not active. Click the subscription button to go to Stripe and start your plan.",
+            true
+          );
           return;
         }
 
@@ -1040,26 +1101,17 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscriptionBadge.classList.remove("active");
           subscriptionBadge.classList.add("inactive");
 
-          subscribeBtn.style.display = "none";
-          createApiKeyBtn.style.display = "none";
-          revokeApiKeyBtn.style.display = "none";
-          howtoBtn.style.display = "none";
-          entriesSection.style.display = "none";
-          reviewActions.style.display = "none";
-          editSpecBtn.style.display = "none";
-
           apiKeyDisplay.textContent = "Error loading API key.";
           setStatus("Error loading API key: " + (data.error || res.status), true);
           return;
         }
 
-        // At this point, subscription is active
+        // 3) Everything OK: show app + key
         setSubscribedUI();
 
         const key = data.api_key || data.key || "";
-        apiKeyDisplay.textContent = key || "No API key yet. Click “Generate / Show API Key”.";
-
-        setStatus("Subscription active. You’re good to go.");
+        apiKeyDisplay.textContent =
+          key || "No API key yet. Click “Generate / Show API Key” to create one.";
       }
 
       async function createOrShowApiKey() {
@@ -1092,11 +1144,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // Sub stays active; just clear the key
-        subscriptionBadge.textContent = "Active";
-        subscriptionBadge.classList.remove("inactive");
-        subscriptionBadge.classList.add("active");
-
+        // Subscription still active; just clear the key
         apiKeyDisplay.textContent =
           "API key revoked. Click “Generate / Show API Key” to create a new one.";
         createApiKeyBtn.style.display = "inline-block";
@@ -1491,7 +1539,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       saveSpecBtn.addEventListener("click", async () => {
         const token = window.localStorage.getItem("idToken");
-        if (!token) return alert("No token found, please sign in again.");
+        if (!token) return alert("Please sign in again.");
 
         const text = (specText.value || "").trim();
         if (!text) return alert("Please paste your specification first.");
@@ -1552,7 +1600,13 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // Init
       // -----------------------------
-      persistTokenFromUrl();
+      const hashParams = persistTokenFromUrl();
+
+      if (hashParams.billing === "success") {
+        setStatus("Payment successful. Activating your subscription…");
+      } else if (hashParams.billing === "cancel") {
+        setStatus("Checkout cancelled. You can start your subscription again any time.");
+      }
 
       const token = window.localStorage.getItem("idToken");
       if (!token) {
