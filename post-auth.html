@@ -754,8 +754,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       // CONFIG
       // -----------------------------
       const apiBase = "https://api.rapidreviewer.io";
-      // Your existing Lambda is behind POST /billing and returns { checkout_url: "..." }
-      const stripeCheckoutPath = "/billing";
+      // Your existing Stripe Lambda route
+      const stripeCheckoutPath = "/billing"; // change to "/billing/" if your API is defined with trailing slash only
 
       // -----------------------------
       // DOM refs
@@ -802,7 +802,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubHowtoClose = document.getElementById("github-howto-close");
 
       // -----------------------------
-      // Auth token + hash handling
+      // Auth token handling
       // -----------------------------
       function parseHashParams() {
         const hash = window.location.hash || "";
@@ -816,14 +816,12 @@ Your AI-generated performance review will appear here after you click "Generate 
         return out;
       }
 
-      // Persist id_token (if Cognito redirect) and return hash params (for billing)
       function persistTokenFromUrl() {
         const hashParams = parseHashParams();
         if (hashParams.id_token) {
           window.localStorage.setItem("idToken", hashParams.id_token);
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
-        return hashParams;
       }
 
       // -----------------------------
@@ -907,26 +905,26 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Stripe checkout redirect
+      // Stripe checkout
       // -----------------------------
-      async function redirectToStripeCheckout(reason) {
+      async function redirectToStripeCheckout() {
         const token = window.localStorage.getItem("idToken");
         if (!token) {
-          setStatus("No token found. Please sign in again.", true);
+          alert("No token found, please sign in again.");
           return;
         }
 
-        setStatus("Redirecting you to Stripe checkout…", false);
+        setStatus("Opening Stripe checkout…");
 
         const { res, data } = await apiFetch(stripeCheckoutPath, {
           method: "POST",
           token,
-          body: { reason: reason || "subscription_required" },
         });
 
         if (!res.ok || !data || !data.checkout_url) {
           setStatus(
-            "Error starting checkout. Please click “Start £0.99/month subscription” again or contact support.",
+            "Error starting checkout. Please try again or contact support. " +
+              (data.error || res.status),
             true
           );
           return;
@@ -938,12 +936,11 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // API key helpers (POST /apikey)
       // -----------------------------
-      async function loadApiKey(options = {}) {
-        const { autoRedirectIfInactive } = options;
+      async function loadApiKey() {
         const token = window.localStorage.getItem("idToken");
         if (!token) return;
 
-        // Start in a neutral state
+        // Reset buttons to a neutral state
         subscribeBtn.style.display = "none";
         createApiKeyBtn.style.display = "none";
         revokeApiKeyBtn.style.display = "none";
@@ -963,22 +960,16 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscriptionBadge.classList.remove("active");
           subscriptionBadge.classList.add("inactive");
 
-          apiKeyDisplay.textContent =
-            "Subscription not active. We’ll take you to Stripe to start your £0.99/month plan.";
           subscribeBtn.style.display = "inline-block";
           createApiKeyBtn.style.display = "none";
           revokeApiKeyBtn.style.display = "none";
 
-          setStatus("Subscription not active. Redirecting you to Stripe…", true);
-
-          if (autoRedirectIfInactive) {
-            await redirectToStripeCheckout("subscription_required");
-          } else {
-            setStatus(
-              "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.",
-              true
-            );
-          }
+          apiKeyDisplay.textContent =
+            "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.";
+          setStatus(
+            "Subscription not active. Click the subscription button to go to Stripe and start your plan.",
+            true
+          );
           return;
         }
 
@@ -1032,7 +1023,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       async function createOrShowApiKey() {
-        await loadApiKey({ autoRedirectIfInactive: false });
+        await loadApiKey();
       }
 
       async function revokeApiKeyHandler() {
@@ -1061,7 +1052,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           return;
         }
 
-        // Subscription is still active, you've just revoked the key
+        // Just revoke the key; subscription itself stays active.
         subscriptionBadge.textContent = "Active";
         subscriptionBadge.classList.remove("inactive");
         subscriptionBadge.classList.add("active");
@@ -1428,9 +1419,8 @@ Your AI-generated performance review will appear here after you click "Generate 
         entriesSection.style.display = "block";
         reviewActions.style.display = "block";
 
-        // Don't assume subscription state yet
-        subscribeBtn.style.display = "none";
-        createApiKeyBtn.style.display = "none";
+        // Show buttons, but don't assume subscription state yet
+        createApiKeyBtn.style.display = "inline-block";
         revokeApiKeyBtn.style.display = "none";
         howtoBtn.style.display = "inline-block";
         editSpecBtn.style.display = "inline-block";
@@ -1512,7 +1502,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       });
 
       subscribeBtn.addEventListener("click", async () => {
-        await redirectToStripeCheckout("subscription_required");
+        await redirectToStripeCheckout();
       });
 
       howtoBtn.addEventListener("click", () => {
@@ -1542,8 +1532,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // Init
       // -----------------------------
-      const hashParams = persistTokenFromUrl();
-      const billingStatus = hashParams.billing || null;
+      persistTokenFromUrl();
 
       const token = window.localStorage.getItem("idToken");
       if (!token) {
@@ -1553,20 +1542,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
       } else {
         showAuthedUI();
-
-        if (billingStatus === "success") {
-          setStatus("Payment successful. Finalising your subscription…");
-          loadApiKey({ autoRedirectIfInactive: false });
-        } else if (billingStatus === "cancel") {
-          setStatus(
-            "You cancelled checkout. Click “Start £0.99/month subscription” to try again.",
-            true
-          );
-          loadApiKey({ autoRedirectIfInactive: false });
-        } else {
-          // Normal case: first login or returning user
-          loadApiKey({ autoRedirectIfInactive: true });
-        }
+        loadApiKey();
       }
     </script>
   </body>
