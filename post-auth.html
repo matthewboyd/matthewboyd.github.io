@@ -922,17 +922,43 @@ Your AI-generated performance review will appear here after you click "Generate 
         });
 
         if (res.status === 402) {
+          // subscription_not_active
+          subscriptionBadge.textContent = "Subscription inactive";
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
           apiKeyDisplay.textContent =
             "Subscription not active. Start your subscription to generate an API key.";
           setStatus("Subscription not active. Please subscribe to generate an API key.", true);
           return;
         }
 
+        if (res.status === 404) {
+          // user_not_found
+          subscriptionBadge.textContent = "No account";
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
+          apiKeyDisplay.textContent =
+            "We couldn't find your user record. Please sign up again or contact support.";
+          setStatus("No user found for this login. Try signing up again.", true);
+          return;
+        }
+
         if (!res.ok) {
+          subscriptionBadge.textContent = "Error";
+          subscriptionBadge.classList.remove("active");
+          subscriptionBadge.classList.add("inactive");
+
           apiKeyDisplay.textContent = "Error loading API key.";
           setStatus("Error loading API key: " + (data.error || res.status), true);
           return;
         }
+
+        // At this point subscription is active
+        subscriptionBadge.textContent = "Active";
+        subscriptionBadge.classList.remove("inactive");
+        subscriptionBadge.classList.add("active");
 
         const key = data.api_key || data.key || "";
         if (key) {
@@ -975,6 +1001,10 @@ Your AI-generated performance review will appear here after you click "Generate 
           alert("Error revoking API key: " + (data.error || res.status));
           return;
         }
+
+        subscriptionBadge.textContent = "Subscription inactive";
+        subscriptionBadge.classList.remove("active");
+        subscriptionBadge.classList.add("inactive");
 
         apiKeyDisplay.textContent =
           "API key revoked. Click “Generate / Show API Key” to create a new one.";
@@ -1335,16 +1365,18 @@ Your AI-generated performance review will appear here after you click "Generate 
       function showAuthedUI() {
         entriesSection.style.display = "block";
         reviewActions.style.display = "block";
+
+        // Show buttons, but don't assume subscription state yet
         createApiKeyBtn.style.display = "inline-block";
-        revokeApiKeyBtn.style.display = "inline-block";
+        revokeApiKeyBtn.style.display = "none";
         howtoBtn.style.display = "inline-block";
         editSpecBtn.style.display = "inline-block";
 
-        subscriptionBadge.textContent = "Active";
-        subscriptionBadge.classList.remove("inactive");
-        subscriptionBadge.classList.add("active");
+        subscriptionBadge.textContent = "Checking…";
+        subscriptionBadge.classList.remove("active");
+        subscriptionBadge.classList.add("inactive");
 
-        setStatus("Welcome! Choose a date range and load your entries.");
+        setStatus("Welcome! Checking your subscription status…");
       }
 
       // -----------------------------
