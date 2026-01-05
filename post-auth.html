@@ -220,7 +220,6 @@
         margin-bottom: 6px;
       }
 
-      /* Date range controls */
       .date-range {
         margin-top: 6px;
         margin-bottom: 8px;
@@ -306,7 +305,6 @@
         border-radius: 999px;
       }
 
-      /* Overlays (extension + GitHub help) */
       .howto-overlay {
         position: fixed;
         inset: 0;
@@ -412,7 +410,6 @@
         color: var(--text-muted);
       }
 
-      /* GitHub import */
       #github-import-section {
         margin-top: 14px;
         padding-top: 10px;
@@ -553,7 +550,6 @@
 
             <ul id="entries-list"></ul>
 
-            <!-- GitHub import section -->
             <div id="github-import-section">
               <div class="card-header" style="padding: 0; margin-bottom: 6px;">
                 <div>
@@ -757,8 +753,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       // CONFIG
       // -----------------------------
       const apiBase = "https://api.rapidreviewer.io";
-      const stripeCheckoutPath = "/billing/create-stripe-checkout"; // OLD path, existing lambda
-      const stripeCancelPath   = "/billing/cancel-subscription";
+      const stripeCheckoutPath = "/billing/create-stripe-checkout"; // old path you requested
+      const stripeCancelPath = "/billing/cancel-subscription";      // existing cancel lambda
       const userInitPath = "/user/init";
 
       // -----------------------------
@@ -898,7 +894,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       function computeMonthAndDate(item) {
         const ts = item.event_ts || item.date || "";
         const d = ts ? new Date(ts) : new Date();
-        the monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
+        const monthKey = d.toLocaleString(undefined, { month: "long", year: "numeric" });
         const displayDate = d.toLocaleDateString(undefined, {
           day: "2-digit",
           month: "2-digit",
@@ -999,17 +995,17 @@ Your AI-generated performance review will appear here after you click "Generate 
         window.location.href = data.checkout_url;
       }
 
-      async function cancelSubscriptionHandler() {
+      async function cancelSubscription() {
         const token = window.localStorage.getItem("idToken");
         if (!token) {
           alert("No token found, please sign in again.");
           return;
         }
 
-        const confirmed = window.confirm(
-          "Cancel your subscription? You won't be charged again. You may lose access after the current period."
+        const ok = window.confirm(
+          "Cancel your subscription? You’ll keep access until the end of the current billing period."
         );
-        if (!confirmed) return;
+        if (!ok) return;
 
         setStatus("Cancelling your subscription…");
 
@@ -1018,18 +1014,16 @@ Your AI-generated performance review will appear here after you click "Generate 
           token,
         });
 
-        console.log("/billing/cancel-subscription response:", data);
+        console.log("/billing cancel response:", data);
 
         if (!res.ok) {
-          setStatus(
-            "Error cancelling subscription: " + (data.error || data.message || res.status),
-            true
-          );
+          setStatus("Error cancelling subscription: " + (data.error || res.status), true);
+          alert("Error cancelling subscription. Please try again or contact support.");
           return;
         }
 
-        setUnsubscribedUI("Subscription cancelled. You won’t be billed again.");
-        setStatus("Subscription cancelled. You won’t be billed again.");
+        setUnsubscribedUI("Subscription cancelled. You can restart it any time from this page.");
+        setStatus("Subscription cancelled. You can restart it any time from this page.");
       }
 
       // -----------------------------
@@ -1611,7 +1605,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       });
 
       cancelSubscriptionBtn.addEventListener("click", async () => {
-        await cancelSubscriptionHandler();
+        await cancelSubscription();
       });
 
       howtoBtn.addEventListener("click", () => {
