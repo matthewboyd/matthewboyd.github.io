@@ -1556,10 +1556,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         await generateOrRegenReview({ forceRegen: true });
       });
 
-      loadHistoryBtn.addEventListener("click", async () => {
-        await loadHistory();
-      });
-
       editSpecBtn.addEventListener("click", () => {
         const isOpen = specUploadContainer.style.display !== "none";
         specUploadContainer.style.display = isOpen ? "none" : "block";
