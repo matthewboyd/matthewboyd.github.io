@@ -1568,13 +1568,13 @@ Your AI-generated performance review will appear here after you click "Generate 
         const text = (specText.value || "").trim();
         if (!text) return alert("Please paste your specification first.");
 
-        const { res, data } = await apiFetch("/spec", {
+        const { res, data } = await apiFetch("/specs", {
           method: "POST",
           token,
           body: { review_spec: text },
         });
 
-        console.log("/spec response:", data);
+        console.log("/specs response:", data);
 
         if (!res.ok) {
           alert("Error saving spec: " + (data.error || res.status));
