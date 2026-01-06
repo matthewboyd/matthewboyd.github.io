@@ -1571,7 +1571,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         const { res, data } = await apiFetch("/specs", {
           method: "POST",
           token,
-          body: { review_spec: text },
+          body: { spec_text: text },
         });
 
         console.log("/specs response:", data);
