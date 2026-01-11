@@ -82,6 +82,35 @@
         white-space: nowrap;
       }
 
+      /* Mobile tab bar (hidden by default, shown on small screens) */
+      .mobile-tabs {
+        display: none;
+        margin-bottom: 10px;
+      }
+
+      .mobile-tabs-inner {
+        display: flex;
+        gap: 6px;
+      }
+
+      .mobile-tab {
+        flex: 1 1 0;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 12px;
+        padding: 8px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .mobile-tab.active {
+        color: var(--text-main);
+        border-color: rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.8);
+      }
+
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -91,6 +120,10 @@
       @media (max-width: 900px) {
         .grid {
           grid-template-columns: 1fr;
+        }
+
+        .mobile-tabs {
+          display: block;
         }
       }
 
@@ -458,9 +491,12 @@
         color: var(--accent);
       }
 
-      /* -----------------------
-         Mobile tweaks
-         ----------------------- */
+      /* Mobile panels: on desktop they behave normally; on mobile we show one at a time via JS */
+      .mobile-panel {
+        /* default (desktop) – do nothing special */
+      }
+
+      /* Extra tuning for smaller phones */
       @media (max-width: 600px) {
         .app {
           padding: 16px 10px 24px;
@@ -519,30 +555,15 @@
           font-size: 10px;
         }
 
-        /* Multi-button rows (subscription/API key block) → 2-up layout */
-        .card > div[style*="flex-wrap:wrap"] {
-          justify-content: flex-start;
+        /* Entries & review/history rows stack text above actions */
+        #entries-list li,
+        #history-list li {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
-        .card > div[style*="flex-wrap:wrap"] .btn {
-          flex: 1 1 calc(50% - 4px);
-          min-width: 0;
-        }
-
-        /* Review action buttons → 2-up */
-        #review-actions > div[style*="flex;"] {
-          justify-content: flex-start;
-        }
-
-        #review-actions > div[style*="flex;"] .btn {
-          flex: 1 1 calc(50% - 4px);
-          min-width: 0;
-        }
-
-        /* Make a few key actions full-width */
-        #show-entries-btn,
-        #github-import-btn,
-        #generate-review-btn {
+        #entries-controls {
+          justify-content: space-between;
           width: 100%;
         }
 
@@ -554,17 +575,6 @@
         #github-token-input {
           width: 100%;
           min-width: 0;
-        }
-
-        #entries-list li,
-        #history-list li {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        #entries-controls {
-          justify-content: space-between;
-          width: 100%;
         }
 
         #review-output {
@@ -600,9 +610,18 @@
         <div class="app-pill">Logged in via Cognito · Secure by design</div>
       </header>
 
+      <!-- Mobile tab bar (desktop: hidden via CSS) -->
+      <nav class="mobile-tabs">
+        <div class="mobile-tabs-inner">
+          <button class="mobile-tab active" data-target="account">Account</button>
+          <button class="mobile-tab" data-target="review">Performance review</button>
+          <button class="mobile-tab" data-target="github">GitHub import</button>
+        </div>
+      </nav>
+
       <div class="grid">
-        <!-- Left column -->
-        <section class="card">
+        <!-- Left column (Account + Entries + GitHub import panels) -->
+        <section class="card account-card">
           <div class="card-header">
             <div>
               <div class="card-title">Account & Subscription</div>
@@ -641,107 +660,116 @@
           <hr />
 
           <div id="entries-section" style="display: none;">
-            <div class="card-header" style="margin-bottom: 8px; padding: 0;">
-              <div>
-                <div class="card-title" style="font-size: 14px;">Your PR entries</div>
-                <div class="card-subtitle">Captured each time you merge or approve a PR.</div>
-              </div>
-            </div>
-
-            <div class="date-range">
-              <div class="section-label">Date range</div>
-              <div class="date-row">
-                <div class="date-group">
-                  <label for="review-start-date">From</label>
-                  <input type="date" id="review-start-date" />
-                </div>
-                <div class="date-group">
-                  <label for="review-end-date">To</label>
-                  <input type="date" id="review-end-date" />
-                </div>
-              </div>
-              <div class="date-helper">
-                <div><strong>Fix:</strong> If you set only one date, we’ll auto-fill the other and use the range.</div>
-                <div>If both are blank, we use the current calendar year.</div>
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
-              <button id="show-entries-btn" class="btn btn-secondary btn-small">
-                Load entries (20 per page)
-              </button>
-              <div id="entries-controls" style="display:none;">
-                <button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
-              </div>
-            </div>
-
-            <ul id="entries-list"></ul>
-
-            <div id="github-import-section">
-              <div class="card-header" style="padding: 0; margin-bottom: 6px;">
+            <!-- Account / entries panel -->
+            <div class="mobile-panel mobile-panel-account">
+              <div class="card-header" style="margin-bottom: 8px; padding: 0;">
                 <div>
-                  <div class="card-title" style="font-size: 14px;">
-                    GitHub import (beta)
-                    <button id="github-howto-btn" class="info-icon" title="How to get a GitHub token">i</button>
-                  </div>
-                  <div class="card-subtitle">
-                    Pull PRs from GitHub into RapidReviewer using the same date range above.
-                  </div>
+                  <div class="card-title" style="font-size: 14px;">Your PR entries</div>
+                  <div class="card-subtitle">Captured each time you merge or approve a PR.</div>
                 </div>
               </div>
-              <div class="date-helper">
-                We’ll fetch PRs authored by you between the selected dates.
-                If the range is empty, we default to the current year.
+
+              <div class="date-range">
+                <div class="section-label">Date range</div>
+                <div class="date-row">
+                  <div class="date-group">
+                    <label for="review-start-date">From</label>
+                    <input type="date" id="review-start-date" />
+                  </div>
+                  <div class="date-group">
+                    <label for="review-end-date">To</label>
+                    <input type="date" id="review-end-date" />
+                  </div>
+                </div>
+                <div class="date-helper">
+                  <div>
+                    <strong>Fix:</strong> If you set only one date, we’ll auto-fill the other and use the range.
+                  </div>
+                  <div>If both are blank, we use the current calendar year.</div>
+                </div>
               </div>
-              <div style="margin-top: 6px;">
-                <div class="section-label" style="margin-bottom: 4px;">GitHub token (optional)</div>
-                <input
-                  id="github-token-input"
-                  type="password"
-                  placeholder="ghp_… (if your import Lambda expects a token in the body)"
-                />
-              </div>
-              <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:8px;">
-                <button id="github-import-btn" class="btn btn-primary btn-small">
-                  Import PRs from GitHub
+
+              <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
+                <button id="show-entries-btn" class="btn btn-secondary btn-small">
+                  Load entries (20 per page)
                 </button>
+                <div id="entries-controls" style="display:none;">
+                  <button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
+                </div>
               </div>
-              <div id="github-import-status"></div>
+
+              <ul id="entries-list"></ul>
+            </div>
+
+            <!-- GitHub import panel (separate tab on mobile) -->
+            <div class="mobile-panel mobile-panel-github">
+              <div id="github-import-section">
+                <div class="card-header" style="padding: 0; margin-bottom: 6px;">
+                  <div>
+                    <div class="card-title" style="font-size: 14px;">
+                      GitHub import (beta)
+                      <button id="github-howto-btn" class="info-icon" title="How to get a GitHub token">i</button>
+                    </div>
+                    <div class="card-subtitle">
+                      Pull PRs from GitHub into RapidReviewer using the same date range above.
+                    </div>
+                  </div>
+                </div>
+                <div class="date-helper">
+                  We’ll fetch PRs authored by you between the selected dates.
+                  If the range is empty, we default to the current year.
+                </div>
+                <div style="margin-top: 6px;">
+                  <div class="section-label" style="margin-bottom: 4px;">GitHub token (optional)</div>
+                  <input
+                    id="github-token-input"
+                    type="password"
+                    placeholder="ghp_… (if your import Lambda expects a token in the body)"
+                  />
+                </div>
+                <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:8px;">
+                  <button id="github-import-btn" class="btn btn-primary btn-small">
+                    Import PRs from GitHub
+                  </button>
+                </div>
+                <div id="github-import-status"></div>
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- Right column -->
+        <!-- Right column (Review panel) -->
         <section id="review-section" class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Performance review generator</div>
-              <div class="card-subtitle">
-                Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
+          <div class="mobile-panel mobile-panel-review">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Performance review generator</div>
+                <div class="card-subtitle">
+                  Step 1: Paste your levels &amp; expectations. Step 2: Generate an AI-powered review from your PRs.
+                </div>
               </div>
             </div>
-          </div>
 
-          <p id="review-spec-status" style="font-size:12px; color:var(--text-muted); margin-top:0;"></p>
+            <p id="review-spec-status" style="font-size:12px; color:var(--text-muted); margin-top:0;"></p>
 
-          <button
-            id="edit-spec-btn"
-            class="btn btn-ghost btn-small"
-            style="display:none; margin-bottom:8px;"
-          >
-            Upload / replace specification
-          </button>
+            <button
+              id="edit-spec-btn"
+              class="btn btn-ghost btn-small"
+              style="display:none; margin-bottom:8px;"
+            >
+              Upload / replace specification
+            </button>
 
-          <div id="spec-upload-container" style="display: none; margin-top: 8px;">
-            <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
-              Paste your company’s levels &amp; expectations / performance rubric below.
-              This box is fully editable — we’ll store it privately and use it to guide your review.
-            </p>
+            <div id="spec-upload-container" style="display: none; margin-top: 8px;">
+              <p style="font-size: 13px; color: var(--text-muted); margin-top:0;">
+                Paste your company’s levels &amp; expectations / performance rubric below.
+                This box is fully editable — we’ll store it privately and use it to guide your review.
+              </p>
 
-            <textarea
-              id="spec-text"
-              rows="8"
-              placeholder="Example:
+              <textarea
+                id="spec-text"
+                rows="8"
+                placeholder="Example:
 L3 Engineer:
 - Delivers scoped features independently.
 - Writes well-tested, maintainable code...
@@ -749,38 +777,39 @@ L3 Engineer:
 L4 Engineer:
 - Owns end-to-end delivery of complex projects...
 (etc.)"
-            ></textarea>
+              ></textarea>
 
-            <button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
-              Save specification
-            </button>
-          </div>
-
-          <div class="date-range" style="margin-top: 12px;">
-            <div class="section-label">Review period</div>
-            <div class="date-helper">
-              We use the <strong>same date range</strong> as the entries filter on the left.
-              If empty, we use the current calendar year.
-            </div>
-          </div>
-
-          <div id="review-actions" style="display: none; margin-top: 8px;">
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-              <button id="generate-review-btn" class="btn btn-primary">Generate performance review</button>
-              <button id="regenerate-review-btn" class="btn btn-ghost btn-small">
-                Regenerate with latest entries
+              <button id="save-spec-btn" class="btn btn-primary" style="margin-top: 8px;">
+                Save specification
               </button>
             </div>
-            <div class="pill-inline">
-              Tip: You’re limited to a 5 generations per month. Update your spec anytime and regenerate.
+
+            <div class="date-range" style="margin-top: 12px;">
+              <div class="section-label">Review period</div>
+              <div class="date-helper">
+                We use the <strong>same date range</strong> as the entries filter on the left.
+                If empty, we use the current calendar year.
+              </div>
             </div>
-          </div>
 
-          <pre id="review-output">
+            <div id="review-actions" style="display: none; margin-top: 8px;">
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                <button id="generate-review-btn" class="btn btn-primary">Generate performance review</button>
+                <button id="regenerate-review-btn" class="btn btn-ghost btn-small">
+                  Regenerate with latest entries
+                </button>
+              </div>
+              <div class="pill-inline">
+                Tip: You’re limited to a 5 generations per month. Update your spec anytime and regenerate.
+              </div>
+            </div>
+
+            <pre id="review-output">
 Your AI-generated performance review will appear here after you click "Generate performance review".
-          </pre>
+            </pre>
 
-          <ul id="history-list"></ul>
+            <ul id="history-list"></ul>
+          </div>
         </section>
       </div>
 
@@ -916,7 +945,6 @@ Your AI-generated performance review will appear here after you click "Generate 
       const reviewActions = document.getElementById("review-actions");
       const generateReviewBtn = document.getElementById("generate-review-btn");
       const regenerateReviewBtn = document.getElementById("regenerate-review-btn");
-      const loadHistoryBtn = document.getElementById("load-history-btn");
       const reviewOutput = document.getElementById("review-output");
       const historyList = document.getElementById("history-list");
 
@@ -925,6 +953,14 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       const githubHowtoOverlay = document.getElementById("github-howto-overlay");
       const githubHowtoClose = document.getElementById("github-howto-close");
+
+      // Mobile tab refs
+      const mobileTabs = Array.from(document.querySelectorAll(".mobile-tab"));
+      const accountCard = document.querySelector(".account-card");
+      const reviewCard = document.getElementById("review-section");
+      const accountPanel = document.querySelector(".mobile-panel-account");
+      const githubPanel = document.querySelector(".mobile-panel-github");
+      const reviewPanel = document.querySelector(".mobile-panel-review");
 
       // -----------------------------
       // Auth token + hash handling
@@ -1656,6 +1692,62 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
+      // Mobile tab behaviour (visual only)
+      // -----------------------------
+      function isMobileLayout() {
+        return window.innerWidth <= 900;
+      }
+
+      function setActiveMobileTab(target) {
+        // Update tab button styles
+        mobileTabs.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.target === target);
+        });
+
+        if (!accountCard || !reviewCard || !accountPanel || !githubPanel || !reviewPanel) return;
+
+        if (!isMobileLayout()) {
+          // Desktop: show everything as normal (original behaviour)
+          accountCard.style.display = "";
+          reviewCard.style.display = "";
+          accountPanel.style.display = "";
+          githubPanel.style.display = "";
+          reviewPanel.style.display = "";
+          return;
+        }
+
+        // Mobile: show a single panel
+        accountCard.style.display = "none";
+        reviewCard.style.display = "none";
+        accountPanel.style.display = "none";
+        githubPanel.style.display = "none";
+        reviewPanel.style.display = "none";
+
+        if (target === "account") {
+          accountCard.style.display = "block";
+          accountPanel.style.display = "block";
+        } else if (target === "github") {
+          accountCard.style.display = "block";
+          githubPanel.style.display = "block";
+        } else if (target === "review") {
+          reviewCard.style.display = "block";
+          reviewPanel.style.display = "block";
+        }
+      }
+
+      mobileTabs.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setActiveMobileTab(btn.dataset.target);
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        const active =
+          mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0];
+        if (active) setActiveMobileTab(active.dataset.target);
+      });
+
+      // -----------------------------
       // Event listeners
       // -----------------------------
       showEntriesBtn.addEventListener("click", async () => {
@@ -1772,6 +1864,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       } else {
         checkSubscriptionAndLoadApiKey();
       }
+
+      // Initial tab state
+      setActiveMobileTab("account");
     </script>
   </body>
 </html>
