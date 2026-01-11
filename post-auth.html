@@ -509,30 +509,51 @@
           font-size: 11px;
         }
 
-        .btn,
-        .btn-small {
-          width: 100%;
-          text-align: center;
+        .btn {
+          padding: 7px 10px;
+          font-size: 11px;
         }
 
-        /* Button groups: stack nicely */
-        .card > div[style*="flex-wrap:wrap"],
-        #github-import-section > div[style*="flex; justify-content:flex-start"],
+        .btn-small {
+          padding: 6px 8px;
+          font-size: 10px;
+        }
+
+        /* Multi-button rows (subscription/API key block) → 2-up layout */
+        .card > div[style*="flex-wrap:wrap"] {
+          justify-content: flex-start;
+        }
+
+        .card > div[style*="flex-wrap:wrap"] .btn {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+        }
+
+        /* Review action buttons → 2-up */
         #review-actions > div[style*="flex;"] {
-          flex-direction: column;
+          justify-content: flex-start;
+        }
+
+        #review-actions > div[style*="flex;"] .btn {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+        }
+
+        /* Make a few key actions full-width */
+        #show-entries-btn,
+        #github-import-btn,
+        #generate-review-btn {
+          width: 100%;
         }
 
         .date-row {
           flex-direction: column;
         }
 
-        .date-group input[type="date"] {
-          min-width: 0;
-          width: 100%;
-        }
-
+        .date-group input[type="date"],
         #github-token-input {
           width: 100%;
+          min-width: 0;
         }
 
         #entries-list li,
@@ -910,6 +931,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       function parseHashParams() {
         const hash = window.location.hash || "";
+        the
         const out = {};
         if (!hash.startsWith("#")) return out;
         const qs = hash.slice(1);
