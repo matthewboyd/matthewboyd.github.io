@@ -225,6 +225,18 @@
         border-radius: 10px;
       }
 
+      /* NEW: small icon button used for copy */
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 0;
+      }
+
       pre {
         margin: 0;
         background: rgba(15, 23, 42, 0.7);
@@ -514,7 +526,7 @@
         /* default */
       }
 
-      /* FIX: make account card scroll within viewport on phones when needed */
+      /* make account card scroll within viewport on phones when needed */
       @media (max-width: 900px) {
         .tab-scroll-card {
           max-height: calc(100dvh - 190px);
@@ -585,6 +597,12 @@
           font-size: 10px;
         }
 
+        .icon-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 11px;
+        }
+
         #entries-list li,
         #history-list li {
           flex-direction: column;
@@ -596,8 +614,15 @@
           width: 100%;
         }
 
+        /* keep date row wrapping, but make inputs a bit smaller so they don't kiss borders */
         .date-row {
           flex-direction: column;
+        }
+
+        .date-group input[type="date"] {
+          font-size: 11px;
+          padding: 5px 6px;
+          border-radius: 9px;
         }
 
         .date-group input[type="date"],
@@ -686,13 +711,57 @@
               Use your API key in the Chrome extension to log PR activity from GitHub.
             </div>
 
-            <div class="section-label">API key</div>
+            <!-- UPDATED: API key header row with copy button -->
+            <div
+              style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top: 10px;"
+            >
+              <div class="section-label" style="margin: 0;">API key</div>
+              <button
+                id="copy-api-key-btn"
+                class="btn btn-ghost btn-small icon-btn"
+                type="button"
+                title="Copy API key"
+                aria-label="Copy API key"
+                style="display:none;"
+              >
+                <!-- simple clipboard icon (no external deps) -->
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 6h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M5 18H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
             <pre id="api-key-display">—</pre>
+
+            <div
+              id="copy-api-key-toast"
+              style="display:none; margin-top:6px; font-size:11px; color: var(--text-muted);"
+            ></div>
 
             <hr />
           </div>
 
-          <!-- FIX: wrapper used ONLY for tab visibility; entriesSection keeps subscription logic intact -->
+          <!-- wrapper used ONLY for tab visibility; entriesSection keeps subscription logic intact -->
           <div id="entries-tab-wrapper">
             <div id="entries-section" style="display: none;">
               <!-- PR entries panel -->
@@ -959,6 +1028,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       const howtoBtn = document.getElementById("howto-extension-btn");
 
       const apiKeyDisplay = document.getElementById("api-key-display");
+      const copyApiKeyBtn = document.getElementById("copy-api-key-btn");
+      const copyApiKeyToast = document.getElementById("copy-api-key-toast");
+
       const accountSubscriptionSection = document.getElementById("account-subscription-section");
       const entriesTabWrapper = document.getElementById("entries-tab-wrapper");
 
@@ -1113,6 +1185,69 @@ Your AI-generated performance review will appear here after you click "Generate 
         reviewOutput.textContent = `${label}${cached}\n\n${data.review_text || ""}`;
       }
 
+      // NEW: copy-to-clipboard helpers
+      let copyToastTimer = null;
+
+      function getApiKeyText() {
+        const t = (apiKeyDisplay.textContent || "").trim();
+        if (!t || t === "—") return "";
+        if (t.toLowerCase().includes("subscription not active")) return "";
+        if (t.toLowerCase().includes("loading")) return "";
+        if (t.toLowerCase().includes("error")) return "";
+        if (t.toLowerCase().includes("no api key yet")) return "";
+        return t;
+      }
+
+      function updateCopyButtonVisibility() {
+        const key = getApiKeyText();
+        copyApiKeyBtn.style.display = key ? "inline-flex" : "none";
+      }
+
+      function showCopyToast(message, isError = false) {
+        copyApiKeyToast.style.display = "block";
+        copyApiKeyToast.style.color = isError ? "rgba(239,68,68,0.95)" : "var(--text-muted)";
+        copyApiKeyToast.textContent = message;
+
+        if (copyToastTimer) clearTimeout(copyToastTimer);
+        copyToastTimer = setTimeout(() => {
+          copyApiKeyToast.style.display = "none";
+          copyApiKeyToast.textContent = "";
+        }, 1600);
+      }
+
+      async function copyTextToClipboard(text) {
+        // Prefer modern clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+
+        // Fallback for older browsers / non-secure contexts
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        ta.style.top = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (!ok) throw new Error("Copy failed");
+      }
+
+      copyApiKeyBtn.addEventListener("click", async () => {
+        const key = getApiKeyText();
+        if (!key) return;
+
+        try {
+          await copyTextToClipboard(key);
+          showCopyToast("Copied API key!");
+        } catch (e) {
+          showCopyToast("Couldn’t copy. Select the key and copy manually.", true);
+        }
+      });
+
       function setSubscribedUI() {
         subscriptionBadge.textContent = "Active";
         subscriptionBadge.classList.remove("inactive");
@@ -1130,7 +1265,8 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         setStatus("Subscription active. You’re good to go.");
 
-        // IMPORTANT: re-apply current tab visibility so entries don't "disappear"
+        updateCopyButtonVisibility();
+
         const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
           .dataset.target;
         setActiveTab(activeTab);
@@ -1155,6 +1291,8 @@ Your AI-generated performance review will appear here after you click "Generate 
           message ||
           "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.";
 
+        updateCopyButtonVisibility();
+
         const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
           .dataset.target;
         setActiveTab(activeTab);
@@ -1177,6 +1315,8 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         apiKeyDisplay.textContent =
           "We couldn't find your user record. Please sign up again via Cognito or contact support.";
+
+        updateCopyButtonVisibility();
 
         const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
           .dataset.target;
@@ -1285,6 +1425,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscriptionBadge.classList.remove("active");
           subscriptionBadge.classList.add("inactive");
           setStatus("No token found. Please sign in again.", true);
+          updateCopyButtonVisibility();
           return;
         }
 
@@ -1303,6 +1444,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         apiKeyDisplay.textContent = "Loading…";
         setStatus("Checking your account and subscription…");
+        updateCopyButtonVisibility();
 
         const user = await syncUserFromInit();
 
@@ -1353,6 +1495,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
           apiKeyDisplay.textContent = "Error loading API key.";
           setStatus("Error loading API key: " + (data.error || res.status), true);
+          updateCopyButtonVisibility();
           return;
         }
 
@@ -1361,6 +1504,8 @@ Your AI-generated performance review will appear here after you click "Generate 
         const key = data.api_key || data.key || "";
         apiKeyDisplay.textContent =
           key || "No API key yet. Click “Generate / Show API Key” to create one.";
+
+        updateCopyButtonVisibility();
       }
 
       async function createOrShowApiKey() {
@@ -1399,6 +1544,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         revokeApiKeyBtn.style.display = "none";
 
         setStatus("API key revoked. Generate a new one if needed.");
+        updateCopyButtonVisibility();
       }
 
       // -----------------------------
@@ -1668,18 +1814,16 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Tabs: layout mapping requested (FIXED so PRs/import don't disappear)
+      // Tabs: layout mapping
       // -----------------------------
       function setActiveTab(target) {
-        // button styles
         mobileTabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.target === target));
 
-        // reset
         if (accountCard) accountCard.style.display = "none";
         if (reviewCard) reviewCard.style.display = "none";
 
         if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
-        if (entriesTabWrapper) entriesTabWrapper.style.display = ""; // wrapper controls tab visibility only
+        if (entriesTabWrapper) entriesTabWrapper.style.display = "";
 
         if (accountPanel) accountPanel.style.display = "none";
         if (githubPanel) githubPanel.style.display = "none";
@@ -1689,25 +1833,20 @@ Your AI-generated performance review will appear here after you click "Generate 
         if (accountCard) accountCard.classList.remove("tab-scroll-card");
 
         if (target === "account") {
-          // Account tab: ONLY Account & Subscription section
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
           if (entriesTabWrapper) entriesTabWrapper.style.display = "none";
           if (reviewCard) reviewCard.style.display = "none";
           if (mainGrid) mainGrid.classList.add("single-column");
-
-          // FIX: on phones, allow card content to scroll if it's taller than the viewport
           if (accountCard && window.innerWidth <= 900) accountCard.classList.add("tab-scroll-card");
           return;
         }
 
         if (target === "review") {
-          // Performance review tab: PR entries + Review generator together
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
           if (entriesTabWrapper) entriesTabWrapper.style.display = "";
 
-          // Only show PR entries panel (entriesSection itself is still gated by subscription)
           if (entriesSection && entriesSection.style.display !== "none") {
             if (accountPanel) accountPanel.style.display = "";
             if (githubPanel) githubPanel.style.display = "none";
@@ -1719,7 +1858,6 @@ Your AI-generated performance review will appear here after you click "Generate 
         }
 
         if (target === "github") {
-          // GitHub import tab: ONLY GitHub import section
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
           if (entriesTabWrapper) entriesTabWrapper.style.display = "";
@@ -1861,6 +1999,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.remove("active");
         subscriptionBadge.classList.add("inactive");
         setStatus("No token found. Please sign in again.", true);
+        updateCopyButtonVisibility();
       } else {
         checkSubscriptionAndLoadApiKey();
       }
