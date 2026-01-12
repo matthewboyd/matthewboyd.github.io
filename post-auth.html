@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- UPDATED: viewport-fit for iPhone safe area -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>RapidReviewer</title>
 
     <style>
@@ -22,7 +23,11 @@
 
       body {
         margin: 0;
+        /* UPDATED: iOS-friendly viewport height + prevent horizontal jiggle */
+        min-height: 100dvh;
         min-height: 100vh;
+        overflow-x: hidden;
+
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
           "Apple Color Emoji", "Segoe UI Emoji";
         color: var(--text-main);
@@ -36,7 +41,13 @@
       .app {
         max-width: 1100px;
         margin: 0 auto;
-        padding: 18px 14px 28px;
+
+        /* UPDATED: safe-area padding for iPhone notch/home indicator */
+        padding:
+          calc(18px + env(safe-area-inset-top))
+          calc(14px + env(safe-area-inset-right))
+          calc(28px + env(safe-area-inset-bottom))
+          calc(14px + env(safe-area-inset-left));
       }
 
       .app-header {
@@ -82,15 +93,16 @@
         white-space: nowrap;
       }
 
-      /* Mobile tab bar (hidden by default, shown on small screens) */
+      /* UPDATED: tabs visible on desktop too */
       .mobile-tabs {
-        display: none;
+        display: block;
         margin-bottom: 10px;
       }
 
       .mobile-tabs-inner {
         display: flex;
         gap: 6px;
+        flex-wrap: wrap; /* UPDATED: nicer wrapping if needed */
       }
 
       .mobile-tab {
@@ -120,10 +132,6 @@
       @media (max-width: 900px) {
         .grid {
           grid-template-columns: 1fr;
-        }
-
-        .mobile-tabs {
-          display: block;
         }
       }
 
@@ -219,6 +227,9 @@
         font-size: 12px;
         color: var(--text-main);
         overflow-x: auto;
+
+        /* UPDATED: avoid causing horizontal overflow */
+        max-width: 100%;
       }
 
       textarea {
@@ -282,7 +293,11 @@
         color: var(--text-main);
         font-size: 12px;
         padding: 6px 8px;
-        min-width: 170px;
+
+        /* UPDATED: prevent overflow on small screens */
+        width: 100%;
+        min-width: 0;
+        max-width: 260px;
       }
 
       .date-group input[type="date"]:focus {
@@ -491,15 +506,17 @@
         color: var(--accent);
       }
 
-      /* Mobile panels: on desktop they behave normally; on mobile we show one at a time via JS */
       .mobile-panel {
         /* default (desktop) – do nothing special */
       }
 
-      /* Extra tuning for smaller phones */
       @media (max-width: 600px) {
         .app {
-          padding: 16px 10px 24px;
+          padding:
+            calc(16px + env(safe-area-inset-top))
+            calc(10px + env(safe-area-inset-right))
+            calc(24px + env(safe-area-inset-bottom))
+            calc(10px + env(safe-area-inset-left));
         }
 
         .app-header {
@@ -555,7 +572,6 @@
           font-size: 10px;
         }
 
-        /* Entries & review/history rows stack text above actions */
         #entries-list li,
         #history-list li {
           flex-direction: column;
@@ -575,6 +591,7 @@
         #github-token-input {
           width: 100%;
           min-width: 0;
+          max-width: none; /* allow full width on phones */
         }
 
         #review-output {
@@ -610,7 +627,7 @@
         <div class="app-pill">Logged in via Cognito · Secure by design</div>
       </header>
 
-      <!-- Mobile tab bar (desktop: hidden via CSS) -->
+      <!-- Tabs (now visible on desktop + mobile) -->
       <nav class="mobile-tabs">
         <div class="mobile-tabs-inner">
           <button class="mobile-tab active" data-target="account">Account</button>
@@ -992,8 +1009,13 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // Date helpers
       // -----------------------------
+      // UPDATED: local-safe YYYY-MM-DD (avoids iOS UTC off-by-one)
       function todayISO() {
-        return new Date().toISOString().split("T")[0];
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
       }
 
       function getNormalizedDateRange(startInput, endInput) {
@@ -1735,9 +1757,19 @@ Your AI-generated performance review will appear here after you click "Generate 
         }
       }
 
+      // UPDATED: On desktop tabs scroll to the relevant area (layout unchanged)
       mobileTabs.forEach((btn) => {
         btn.addEventListener("click", () => {
-          setActiveMobileTab(btn.dataset.target);
+          const target = btn.dataset.target;
+          setActiveMobileTab(target);
+
+          if (!isMobileLayout()) {
+            let el = null;
+            if (target === "account") el = accountCard;
+            if (target === "review") el = reviewCard;
+            if (target === "github") el = document.getElementById("github-import-section");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
       });
 
