@@ -22,7 +22,6 @@
 
       body {
         margin: 0;
-        /* UPDATED: iOS-friendly viewport height + prevent horizontal jiggle */
         min-height: 100dvh;
         min-height: 100vh;
         overflow-x: hidden;
@@ -41,7 +40,6 @@
         max-width: 1100px;
         margin: 0 auto;
 
-        /* UPDATED: safe-area padding for iPhone notch/home indicator */
         padding:
           calc(18px + env(safe-area-inset-top))
           calc(14px + env(safe-area-inset-right))
@@ -92,7 +90,7 @@
         white-space: nowrap;
       }
 
-      /* UPDATED: tabs visible on desktop too */
+      /* Tabs visible on desktop + mobile */
       .mobile-tabs {
         display: block;
         margin-bottom: 10px;
@@ -101,7 +99,7 @@
       .mobile-tabs-inner {
         display: flex;
         gap: 6px;
-        flex-wrap: wrap; /* UPDATED: nicer wrapping if needed */
+        flex-wrap: wrap;
       }
 
       .mobile-tab {
@@ -126,6 +124,11 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 14px;
+      }
+
+      /* When showing only one "tab content", make it full width */
+      .grid.single-column {
+        grid-template-columns: 1fr;
       }
 
       @media (max-width: 900px) {
@@ -226,8 +229,6 @@
         font-size: 12px;
         color: var(--text-main);
         overflow-x: auto;
-
-        /* UPDATED: avoid causing horizontal overflow */
         max-width: 100%;
       }
 
@@ -293,7 +294,6 @@
         font-size: 12px;
         padding: 6px 8px;
 
-        /* UPDATED: prevent overflow on small screens */
         width: 100%;
         min-width: 0;
         max-width: 260px;
@@ -590,7 +590,7 @@
         #github-token-input {
           width: 100%;
           min-width: 0;
-          max-width: none; /* allow full width on phones */
+          max-width: none;
         }
 
         #review-output {
@@ -626,7 +626,7 @@
         <div class="app-pill">Logged in via Cognito · Secure by design</div>
       </header>
 
-      <!-- Tabs (now visible on desktop + mobile) -->
+      <!-- Tabs -->
       <nav class="mobile-tabs">
         <div class="mobile-tabs-inner">
           <button class="mobile-tab active" data-target="account">Account</button>
@@ -635,48 +635,52 @@
         </div>
       </nav>
 
-      <div class="grid">
-        <!-- Left column (Account + Entries + GitHub import panels) -->
+      <div class="grid" id="main-grid">
+        <!-- Account card (used by all tabs; contents shown/hidden by JS) -->
         <section class="card account-card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Account & Subscription</div>
-              <div class="card-subtitle">Manage billing, API keys and see your captured PR entries.</div>
+          <!-- NEW WRAPPER: account/subscription section (so we can hide/show without changing functionality) -->
+          <div id="account-subscription-section">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Account & Subscription</div>
+                <div class="card-subtitle">Manage billing, API keys and see your captured PR entries.</div>
+              </div>
+              <span id="subscription-badge" class="status-badge inactive">Checking…</span>
             </div>
-            <span id="subscription-badge" class="status-badge inactive">Checking…</span>
+
+            <div id="status" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"></div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
+                Start £0.99/month subscription
+              </button>
+              <button id="cancel-subscription-btn" class="btn btn-ghost btn-small" style="display:none;">
+                Cancel subscription
+              </button>
+              <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
+                Generate / Show API Key
+              </button>
+              <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
+                Revoke API Key
+              </button>
+              <button id="howto-extension-btn" class="btn btn-ghost btn-small" style="display:none;">
+                How to connect the Chrome extension
+              </button>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+              Use your API key in the Chrome extension to log PR activity from GitHub.
+            </div>
+
+            <div class="section-label">API key</div>
+            <pre id="api-key-display">—</pre>
+
+            <hr />
           </div>
 
-          <div id="status" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"></div>
-
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <button id="subscribe-btn" class="btn btn-primary" style="display:none;">
-              Start £0.99/month subscription
-            </button>
-            <button id="cancel-subscription-btn" class="btn btn-ghost btn-small" style="display:none;">
-              Cancel subscription
-            </button>
-            <button id="create-api-key-btn" class="btn btn-secondary" style="display:none;">
-              Generate / Show API Key
-            </button>
-            <button id="revoke-api-key-btn" class="btn btn-ghost btn-small" style="display:none;">
-              Revoke API Key
-            </button>
-            <button id="howto-extension-btn" class="btn btn-ghost btn-small" style="display:none;">
-              How to connect the Chrome extension
-            </button>
-          </div>
-
-          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-            Use your API key in the Chrome extension to log PR activity from GitHub.
-          </div>
-
-          <div class="section-label">API key</div>
-          <pre id="api-key-display">—</pre>
-
-          <hr />
-
+          <!-- Entries + GitHub import section (kept exactly the same; visibility controlled by JS and subscription state) -->
           <div id="entries-section" style="display: none;">
-            <!-- Account / entries panel -->
+            <!-- PR entries panel -->
             <div class="mobile-panel mobile-panel-account">
               <div class="card-header" style="margin-bottom: 8px; padding: 0;">
                 <div>
@@ -717,7 +721,7 @@
               <ul id="entries-list"></ul>
             </div>
 
-            <!-- GitHub import panel (separate tab on mobile) -->
+            <!-- GitHub import panel -->
             <div class="mobile-panel mobile-panel-github">
               <div id="github-import-section">
                 <div class="card-header" style="padding: 0; margin-bottom: 6px;">
@@ -754,7 +758,7 @@
           </div>
         </section>
 
-        <!-- Right column (Review panel) -->
+        <!-- Review card -->
         <section id="review-section" class="card">
           <div class="mobile-panel mobile-panel-review">
             <div class="card-header">
@@ -939,6 +943,8 @@ Your AI-generated performance review will appear here after you click "Generate 
       const howtoBtn = document.getElementById("howto-extension-btn");
 
       const apiKeyDisplay = document.getElementById("api-key-display");
+      const accountSubscriptionSection = document.getElementById("account-subscription-section");
+
       const entriesSection = document.getElementById("entries-section");
       const startDateInput = document.getElementById("review-start-date");
       const endDateInput = document.getElementById("review-end-date");
@@ -970,8 +976,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubHowtoOverlay = document.getElementById("github-howto-overlay");
       const githubHowtoClose = document.getElementById("github-howto-close");
 
-      // Mobile tab refs
+      // Tab / panel refs
       const mobileTabs = Array.from(document.querySelectorAll(".mobile-tab"));
+      const mainGrid = document.getElementById("main-grid");
       const accountCard = document.querySelector(".account-card");
       const reviewCard = document.getElementById("review-section");
       const accountPanel = document.querySelector(".mobile-panel-account");
@@ -1008,7 +1015,6 @@ Your AI-generated performance review will appear here after you click "Generate 
       // -----------------------------
       // Date helpers
       // -----------------------------
-      // UPDATED: local-safe YYYY-MM-DD (avoids iOS UTC off-by-one)
       function todayISO() {
         const d = new Date();
         const yyyy = d.getFullYear();
@@ -1713,69 +1719,77 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // Mobile tab behaviour (visual only)
+      // Tabs: layout mapping requested
       // -----------------------------
-      function isMobileLayout() {
-        return window.innerWidth <= 900;
-      }
+      function setActiveTab(target) {
+        // button styles
+        mobileTabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.target === target));
 
-      function setActiveMobileTab(target) {
-        // Update tab button styles
-        mobileTabs.forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.target === target);
-        });
+        // reset everything hidden
+        if (accountCard) accountCard.style.display = "none";
+        if (reviewCard) reviewCard.style.display = "none";
 
-        if (!accountCard || !reviewCard || !accountPanel || !githubPanel || !reviewPanel) return;
+        if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
+        // IMPORTANT: entriesSection subscription logic still controls its own display,
+        // but tabs decide whether it should be shown at all.
+        if (entriesSection) entriesSection.style.display = entriesSection.style.display; // no-op
 
-        if (!isMobileLayout()) {
-          // Desktop: show everything as normal (original behaviour)
-          accountCard.style.display = "";
-          reviewCard.style.display = "";
-          accountPanel.style.display = "";
-          githubPanel.style.display = "";
-          reviewPanel.style.display = "";
+        if (accountPanel) accountPanel.style.display = "none";
+        if (githubPanel) githubPanel.style.display = "none";
+        if (reviewPanel) reviewPanel.style.display = "";
+
+        // Default grid layout
+        if (mainGrid) mainGrid.classList.remove("single-column");
+
+        if (target === "account") {
+          // Account tab: ONLY Account & Subscription section
+          if (accountCard) accountCard.style.display = "block";
+          if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
+          if (entriesSection) entriesSection.style.display = "none";
+          if (reviewCard) reviewCard.style.display = "none";
+          if (mainGrid) mainGrid.classList.add("single-column");
           return;
         }
 
-        // Mobile: show a single panel
-        accountCard.style.display = "none";
-        reviewCard.style.display = "none";
-        accountPanel.style.display = "none";
-        githubPanel.style.display = "none";
-        reviewPanel.style.display = "none";
+        if (target === "review") {
+          // Performance review tab: PR entries + Review generator together
+          if (accountCard) accountCard.style.display = "block";
+          if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
 
-        if (target === "account") {
-          accountCard.style.display = "block";
-          accountPanel.style.display = "block";
-        } else if (target === "github") {
-          accountCard.style.display = "block";
-          githubPanel.style.display = "block";
-        } else if (target === "review") {
-          reviewCard.style.display = "block";
-          reviewPanel.style.display = "block";
+          // Only show PR entries panel inside entriesSection (if subscription allows entriesSection)
+          if (entriesSection && entriesSection.style.display !== "none") {
+            if (accountPanel) accountPanel.style.display = "";
+            if (githubPanel) githubPanel.style.display = "none";
+          }
+
+          if (reviewCard) reviewCard.style.display = "block";
+          // (reviewPanel already visible by default)
+
+          // 2-column layout when both cards visible and screen allows it
+          if (mainGrid) mainGrid.classList.remove("single-column");
+          return;
+        }
+
+        if (target === "github") {
+          // GitHub import tab: ONLY GitHub import section
+          if (accountCard) accountCard.style.display = "block";
+          if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
+
+          if (entriesSection && entriesSection.style.display !== "none") {
+            if (accountPanel) accountPanel.style.display = "none";
+            if (githubPanel) githubPanel.style.display = "";
+          }
+
+          if (reviewCard) reviewCard.style.display = "none";
+          if (mainGrid) mainGrid.classList.add("single-column");
+          return;
         }
       }
 
-      // UPDATED: On desktop tabs scroll to the relevant area (layout unchanged)
       mobileTabs.forEach((btn) => {
         btn.addEventListener("click", () => {
-          const target = btn.dataset.target;
-          setActiveMobileTab(target);
-
-          if (!isMobileLayout()) {
-            let el = null;
-            if (target === "account") el = accountCard;
-            if (target === "review") el = reviewCard;
-            if (target === "github") el = document.getElementById("github-import-section");
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
+          setActiveTab(btn.dataset.target);
         });
-      });
-
-      window.addEventListener("resize", () => {
-        const active =
-          mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0];
-        if (active) setActiveMobileTab(active.dataset.target);
       });
 
       // -----------------------------
@@ -1896,8 +1910,8 @@ Your AI-generated performance review will appear here after you click "Generate 
         checkSubscriptionAndLoadApiKey();
       }
 
-      // Initial tab state
-      setActiveMobileTab("account");
+      // Initial tab state per your request
+      setActiveTab("account");
     </script>
   </body>
 </html>
