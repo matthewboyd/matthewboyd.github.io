@@ -20,6 +20,11 @@
         box-sizing: border-box;
       }
 
+      html,
+      body {
+        height: 100%;
+      }
+
       body {
         margin: 0;
         min-height: 100dvh;
@@ -506,7 +511,16 @@
       }
 
       .mobile-panel {
-        /* default (desktop) – do nothing special */
+        /* default */
+      }
+
+      /* FIX: make account card scroll within viewport on phones when needed */
+      @media (max-width: 900px) {
+        .tab-scroll-card {
+          max-height: calc(100dvh - 190px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
       }
 
       @media (max-width: 600px) {
@@ -636,9 +650,9 @@
       </nav>
 
       <div class="grid" id="main-grid">
-        <!-- Account card (used by all tabs; contents shown/hidden by JS) -->
-        <section class="card account-card">
-          <!-- NEW WRAPPER: account/subscription section (so we can hide/show without changing functionality) -->
+        <!-- Account card -->
+        <section class="card account-card" id="account-card">
+          <!-- Account & Subscription section -->
           <div id="account-subscription-section">
             <div class="card-header">
               <div>
@@ -678,81 +692,83 @@
             <hr />
           </div>
 
-          <!-- Entries + GitHub import section (kept exactly the same; visibility controlled by JS and subscription state) -->
-          <div id="entries-section" style="display: none;">
-            <!-- PR entries panel -->
-            <div class="mobile-panel mobile-panel-account">
-              <div class="card-header" style="margin-bottom: 8px; padding: 0;">
-                <div>
-                  <div class="card-title" style="font-size: 14px;">Your PR entries</div>
-                  <div class="card-subtitle">Captured each time you merge or approve a PR.</div>
-                </div>
-              </div>
-
-              <div class="date-range">
-                <div class="section-label">Date range</div>
-                <div class="date-row">
-                  <div class="date-group">
-                    <label for="review-start-date">From</label>
-                    <input type="date" id="review-start-date" />
-                  </div>
-                  <div class="date-group">
-                    <label for="review-end-date">To</label>
-                    <input type="date" id="review-end-date" />
-                  </div>
-                </div>
-                <div class="date-helper">
+          <!-- FIX: wrapper used ONLY for tab visibility; entriesSection keeps subscription logic intact -->
+          <div id="entries-tab-wrapper">
+            <div id="entries-section" style="display: none;">
+              <!-- PR entries panel -->
+              <div class="mobile-panel mobile-panel-account">
+                <div class="card-header" style="margin-bottom: 8px; padding: 0;">
                   <div>
-                    <strong>Fix:</strong> If you set only one date, we’ll auto-fill the other and use the range.
+                    <div class="card-title" style="font-size: 14px;">Your PR entries</div>
+                    <div class="card-subtitle">Captured each time you merge or approve a PR.</div>
                   </div>
-                  <div>If both are blank, we use the current calendar year.</div>
                 </div>
-              </div>
 
-              <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
-                <button id="show-entries-btn" class="btn btn-secondary btn-small">
-                  Load entries (20 per page)
-                </button>
-                <div id="entries-controls" style="display:none;">
-                  <button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
-                </div>
-              </div>
-
-              <ul id="entries-list"></ul>
-            </div>
-
-            <!-- GitHub import panel -->
-            <div class="mobile-panel mobile-panel-github">
-              <div id="github-import-section">
-                <div class="card-header" style="padding: 0; margin-bottom: 6px;">
-                  <div>
-                    <div class="card-title" style="font-size: 14px;">
-                      GitHub import (beta)
-                      <button id="github-howto-btn" class="info-icon" title="How to get a GitHub token">i</button>
+                <div class="date-range">
+                  <div class="section-label">Date range</div>
+                  <div class="date-row">
+                    <div class="date-group">
+                      <label for="review-start-date">From</label>
+                      <input type="date" id="review-start-date" />
                     </div>
-                    <div class="card-subtitle">
-                      Pull PRs from GitHub into RapidReviewer using the same date range above.
+                    <div class="date-group">
+                      <label for="review-end-date">To</label>
+                      <input type="date" id="review-end-date" />
                     </div>
                   </div>
+                  <div class="date-helper">
+                    <div>
+                      <strong>Fix:</strong> If you set only one date, we’ll auto-fill the other and use the range.
+                    </div>
+                    <div>If both are blank, we use the current calendar year.</div>
+                  </div>
                 </div>
-                <div class="date-helper">
-                  We’ll fetch PRs authored by you between the selected dates.
-                  If the range is empty, we default to the current year.
-                </div>
-                <div style="margin-top: 6px;">
-                  <div class="section-label" style="margin-bottom: 4px;">GitHub token (optional)</div>
-                  <input
-                    id="github-token-input"
-                    type="password"
-                    placeholder="ghp_… (if your import Lambda expects a token in the body)"
-                  />
-                </div>
-                <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:8px;">
-                  <button id="github-import-btn" class="btn btn-primary btn-small">
-                    Import PRs from GitHub
+
+                <div style="display:flex; justify-content: space-between; align-items:center; margin-top:6px;">
+                  <button id="show-entries-btn" class="btn btn-secondary btn-small">
+                    Load entries (20 per page)
                   </button>
+                  <div id="entries-controls" style="display:none;">
+                    <button id="next-page-btn" class="btn btn-ghost btn-small">Next 20</button>
+                  </div>
                 </div>
-                <div id="github-import-status"></div>
+
+                <ul id="entries-list"></ul>
+              </div>
+
+              <!-- GitHub import panel -->
+              <div class="mobile-panel mobile-panel-github">
+                <div id="github-import-section">
+                  <div class="card-header" style="padding: 0; margin-bottom: 6px;">
+                    <div>
+                      <div class="card-title" style="font-size: 14px;">
+                        GitHub import (beta)
+                        <button id="github-howto-btn" class="info-icon" title="How to get a GitHub token">i</button>
+                      </div>
+                      <div class="card-subtitle">
+                        Pull PRs from GitHub into RapidReviewer using the same date range above.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="date-helper">
+                    We’ll fetch PRs authored by you between the selected dates.
+                    If the range is empty, we default to the current year.
+                  </div>
+                  <div style="margin-top: 6px;">
+                    <div class="section-label" style="margin-bottom: 4px;">GitHub token (optional)</div>
+                    <input
+                      id="github-token-input"
+                      type="password"
+                      placeholder="ghp_… (if your import Lambda expects a token in the body)"
+                    />
+                  </div>
+                  <div style="display:flex; justify-content:flex-start; gap:8px; margin-top:8px;">
+                    <button id="github-import-btn" class="btn btn-primary btn-small">
+                      Import PRs from GitHub
+                    </button>
+                  </div>
+                  <div id="github-import-status"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -944,6 +960,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       const apiKeyDisplay = document.getElementById("api-key-display");
       const accountSubscriptionSection = document.getElementById("account-subscription-section");
+      const entriesTabWrapper = document.getElementById("entries-tab-wrapper");
 
       const entriesSection = document.getElementById("entries-section");
       const startDateInput = document.getElementById("review-start-date");
@@ -979,7 +996,7 @@ Your AI-generated performance review will appear here after you click "Generate 
       // Tab / panel refs
       const mobileTabs = Array.from(document.querySelectorAll(".mobile-tab"));
       const mainGrid = document.getElementById("main-grid");
-      const accountCard = document.querySelector(".account-card");
+      const accountCard = document.getElementById("account-card");
       const reviewCard = document.getElementById("review-section");
       const accountPanel = document.querySelector(".mobile-panel-account");
       const githubPanel = document.querySelector(".mobile-panel-github");
@@ -1112,6 +1129,11 @@ Your AI-generated performance review will appear here after you click "Generate 
         editSpecBtn.style.display = "inline-block";
 
         setStatus("Subscription active. You’re good to go.");
+
+        // IMPORTANT: re-apply current tab visibility so entries don't "disappear"
+        const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
+          .dataset.target;
+        setActiveTab(activeTab);
       }
 
       function setUnsubscribedUI(message) {
@@ -1132,6 +1154,10 @@ Your AI-generated performance review will appear here after you click "Generate 
         apiKeyDisplay.textContent =
           message ||
           "Subscription not active. Click “Start £0.99/month subscription” to open Stripe checkout.";
+
+        const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
+          .dataset.target;
+        setActiveTab(activeTab);
       }
 
       function setNoUserUI() {
@@ -1151,6 +1177,10 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         apiKeyDisplay.textContent =
           "We couldn't find your user record. Please sign up again via Cognito or contact support.";
+
+        const activeTab = (mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0])
+          .dataset.target;
+        setActiveTab(activeTab);
       }
 
       // -----------------------------
@@ -1638,116 +1668,36 @@ Your AI-generated performance review will appear here after you click "Generate 
       }
 
       // -----------------------------
-      // History
-      // -----------------------------
-      async function loadHistory() {
-        const token = window.localStorage.getItem("idToken");
-        if (!token) {
-          alert("No token found, please sign in again.");
-          return;
-        }
-
-        const { start, end, year } = getNormalizedDateRange(startDateInput, endDateInput);
-
-        const url = new URL(`${apiBase}/performance-review`);
-        url.searchParams.set("year", String(year));
-
-        const res = await fetch(url.toString(), {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await res.json().catch(() => ({}));
-        console.log("/performance-review history response:", data);
-
-        if (!res.ok) {
-          alert("Error loading historic reviews: " + (data.error || res.status));
-          return;
-        }
-
-        const items = data.items || [];
-        historyList.innerHTML = "";
-
-        if (!items.length) {
-          const li = document.createElement("li");
-          li.textContent = "No historic reviews for this year yet.";
-          historyList.appendChild(li);
-          return;
-        }
-
-        items.forEach((item, idx) => {
-          const li = document.createElement("li");
-
-          const meta = document.createElement("div");
-          meta.className = "history-meta";
-
-          const title = document.createElement("div");
-          const genAt = item.generated_at || "";
-          const label = item.period_label || String(year);
-          title.innerHTML = `<strong>Review ${idx + 1}</strong> · <span>${label}</span>`;
-          meta.appendChild(title);
-
-          if (genAt) {
-            const ts = document.createElement("div");
-            ts.style.fontSize = "10px";
-            ts.style.color = "var(--text-muted)";
-            ts.textContent = `Generated at: ${genAt}`;
-            meta.appendChild(ts);
-          }
-
-          const btn = document.createElement("button");
-          btn.className = "btn btn-ghost btn-small";
-          btn.textContent = "Download";
-          btn.addEventListener("click", () => {
-            const text = item.review_text || "";
-            const blob = new Blob([text], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            const safeLabel = (label || String(year)).replace(/[^a-zA-Z0-9_-]+/g, "-");
-            a.download = `rapidreviewer-${safeLabel}-${idx + 1}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          });
-
-          li.appendChild(meta);
-          li.appendChild(btn);
-          historyList.appendChild(li);
-        });
-      }
-
-      // -----------------------------
-      // Tabs: layout mapping requested
+      // Tabs: layout mapping requested (FIXED so PRs/import don't disappear)
       // -----------------------------
       function setActiveTab(target) {
         // button styles
         mobileTabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.target === target));
 
-        // reset everything hidden
+        // reset
         if (accountCard) accountCard.style.display = "none";
         if (reviewCard) reviewCard.style.display = "none";
 
         if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
-        // IMPORTANT: entriesSection subscription logic still controls its own display,
-        // but tabs decide whether it should be shown at all.
-        if (entriesSection) entriesSection.style.display = entriesSection.style.display; // no-op
+        if (entriesTabWrapper) entriesTabWrapper.style.display = ""; // wrapper controls tab visibility only
 
         if (accountPanel) accountPanel.style.display = "none";
         if (githubPanel) githubPanel.style.display = "none";
         if (reviewPanel) reviewPanel.style.display = "";
 
-        // Default grid layout
         if (mainGrid) mainGrid.classList.remove("single-column");
+        if (accountCard) accountCard.classList.remove("tab-scroll-card");
 
         if (target === "account") {
           // Account tab: ONLY Account & Subscription section
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "";
-          if (entriesSection) entriesSection.style.display = "none";
+          if (entriesTabWrapper) entriesTabWrapper.style.display = "none";
           if (reviewCard) reviewCard.style.display = "none";
           if (mainGrid) mainGrid.classList.add("single-column");
+
+          // FIX: on phones, allow card content to scroll if it's taller than the viewport
+          if (accountCard && window.innerWidth <= 900) accountCard.classList.add("tab-scroll-card");
           return;
         }
 
@@ -1755,17 +1705,15 @@ Your AI-generated performance review will appear here after you click "Generate 
           // Performance review tab: PR entries + Review generator together
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
+          if (entriesTabWrapper) entriesTabWrapper.style.display = "";
 
-          // Only show PR entries panel inside entriesSection (if subscription allows entriesSection)
+          // Only show PR entries panel (entriesSection itself is still gated by subscription)
           if (entriesSection && entriesSection.style.display !== "none") {
             if (accountPanel) accountPanel.style.display = "";
             if (githubPanel) githubPanel.style.display = "none";
           }
 
           if (reviewCard) reviewCard.style.display = "block";
-          // (reviewPanel already visible by default)
-
-          // 2-column layout when both cards visible and screen allows it
           if (mainGrid) mainGrid.classList.remove("single-column");
           return;
         }
@@ -1774,6 +1722,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           // GitHub import tab: ONLY GitHub import section
           if (accountCard) accountCard.style.display = "block";
           if (accountSubscriptionSection) accountSubscriptionSection.style.display = "none";
+          if (entriesTabWrapper) entriesTabWrapper.style.display = "";
 
           if (entriesSection && entriesSection.style.display !== "none") {
             if (accountPanel) accountPanel.style.display = "none";
@@ -1790,6 +1739,12 @@ Your AI-generated performance review will appear here after you click "Generate 
         btn.addEventListener("click", () => {
           setActiveTab(btn.dataset.target);
         });
+      });
+
+      window.addEventListener("resize", () => {
+        const active =
+          mobileTabs.find((b) => b.classList.contains("active")) || mobileTabs[0];
+        if (active) setActiveTab(active.dataset.target);
       });
 
       // -----------------------------
@@ -1910,7 +1865,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         checkSubscriptionAndLoadApiKey();
       }
 
-      // Initial tab state per your request
+      // Initial tab state
       setActiveTab("account");
     </script>
   </body>
