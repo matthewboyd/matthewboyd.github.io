@@ -386,6 +386,30 @@
         margin-top: 6px;
       }
 
+      /* Walkthrough video inside the extension card */
+      .preview-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--text-muted);
+        margin-top: 10px;
+        margin-bottom: 6px;
+      }
+
+      .video-wrapper {
+        border-radius: 14px;
+        overflow: hidden;
+        background: #020617;
+        border: 1px solid rgba(148,163,184,0.35);
+        box-shadow: 0 16px 40px rgba(15,23,42,0.7);
+      }
+
+      .video-wrapper video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
       @media (max-width: 800px) {
         .shell {
           grid-template-columns: minmax(0, 1fr);
@@ -447,7 +471,7 @@
           </div>
         </section>
 
-        <!-- Right: Chrome extension showcase -->
+        <!-- Right: Chrome extension showcase + walkthrough video -->
         <aside class="side-card">
           <div class="store-header">
             <div class="store-left">
@@ -486,6 +510,23 @@
               <span class="store-chip">Works on github.com/*/pull/*</span>
               <span class="store-chip">Zero config once your API key is set</span>
               <span class="store-chip">Privacy-first · your data stays yours</span>
+            </div>
+          </div>
+
+          <!-- Walkthrough video -->
+          <div>
+            <div class="preview-label">Watch the 90-second walkthrough</div>
+            <div class="video-wrapper">
+              <video
+                controls
+                preload="metadata"
+                poster="assets/rapidreviewer-walkthrough-poster.jpg"
+              >
+                <source src="assets/rapidreviewer-walkthrough-v1.mp4" type="video/mp4" />
+                <!-- Optional extra format for better compression in some browsers -->
+                <!-- <source src="assets/rapidreviewer-walkthrough-v1.webm" type="video/webm" /> -->
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
 
