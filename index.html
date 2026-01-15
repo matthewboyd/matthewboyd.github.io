@@ -397,17 +397,22 @@
       }
 
       .video-wrapper {
+        position: relative;
         border-radius: 14px;
         overflow: hidden;
         background: #020617;
         border: 1px solid rgba(148,163,184,0.35);
         box-shadow: 0 16px 40px rgba(15,23,42,0.7);
+        pointer-events: auto;
       }
 
       .video-wrapper video {
         display: block;
         width: 100%;
         height: auto;
+        pointer-events: auto;
+        position: relative;
+        z-index: 1;
       }
 
       @media (max-width: 800px) {
