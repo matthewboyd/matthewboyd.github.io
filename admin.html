@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RapidReviewer Admin · Metrics</title>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg-dark:#050816;
+      --bg-card: rgba(255,255,255,.06);
+      --bg-card-2: rgba(255,255,255,.045);
+      --stroke: rgba(255,255,255,.10);
+      --stroke-2: rgba(255,255,255,.14);
+      --text:#EAF0FF;
+      --muted: rgba(234,240,255,.72);
+      --muted2: rgba(234,240,255,.55);
+      --good:#5DFFB1;
+      --warn:#FFD56A;
+      --bad:#FF6B8B;
+      --accent:#7C5CFF;
+      --accent2:#22D3EE;
+      --shadow: 0 16px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+      --radius2: 22px;
+      --pad: 18px;
+      --max: 1150px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(124,92,255,.35), transparent 55%),
+        radial-gradient(900px 650px at 85% 0%, rgba(34,211,238,.22), transparent 60%),
+        radial-gradient(900px 650px at 50% 115%, rgba(124,92,255,.16), transparent 55%),
+        var(--bg-dark);
+    }
+
+    a{ color: inherit; text-decoration:none; }
+    a:hover{ text-decoration: underline; }
+
+    .container{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 22px 18px 60px;
+    }
+
+    /* Header */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 220px;
+    }
+    .logo{
+      width:36px;height:36px;
+      border-radius: 12px;
+      display:grid;
+      place-items:center;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 55%),
+        linear-gradient(135deg, rgba(124,92,255,.95), rgba(34,211,238,.60));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 30px rgba(124,92,255,.25);
+    }
+    .brand h1{
+      font-size: 14px;
+      margin:0;
+      letter-spacing:.2px;
+      font-weight: 700;
+    }
+    .brand .sub{
+      font-size: 12px;
+      color: var(--muted2);
+      margin-top: 2px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .btn{
+      cursor:pointer;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.20); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: rgba(124,92,255,.5);
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
+      box-shadow: 0 14px 40px rgba(124,92,255,.22);
+    }
+    .btn.primary:hover{
+      background: linear-gradient(135deg, rgba(124,92,255,1), rgba(124,92,255,.62));
+    }
+    .btn.ghost{
+      background: transparent;
+    }
+
+    /* Layout */
+    .page-title{
+      margin: 26px 4px 14px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .page-title h2{
+      margin:0;
+      font-size: 26px;
+      letter-spacing:-.4px;
+    }
+    .page-title p{
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 680px;
+      line-height: 1.45;
+    }
+
+    .grid{
+      display:grid;
+      gap: 14px;
+    }
+    .grid.kpis{ grid-template-columns: repeat(12, 1fr); }
+    .grid.main{ grid-template-columns: repeat(12, 1fr); margin-top: 14px; }
+
+    .card{
+      border: 1px solid var(--stroke);
+      background: var(--bg-card);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+    }
+    .card .inner{ padding: var(--pad); }
+
+    .kpi{
+      grid-column: span 3;
+      min-height: 108px;
+      position: relative;
+    }
+    .kpi::before{
+      content:"";
+      position:absolute;
+      inset:-1px -1px auto -1px;
+      height: 54px;
+      background: linear-gradient(90deg, rgba(124,92,255,.24), rgba(34,211,238,.16), transparent);
+      opacity:.9;
+      pointer-events:none;
+    }
+    .kpi .label{
+      position: relative;
+      font-size: 12px;
+      color: var(--muted2);
+      margin:0 0 8px;
+    }
+    .kpi .value{
+      position: relative;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing:-.6px;
+      margin:0;
+    }
+    .kpi .delta{
+      position: relative;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{
+      width: 8px; height: 8px; border-radius: 99px;
+      background: rgba(255,255,255,.35);
+      border:1px solid rgba(255,255,255,.22);
+    }
+    .dot.good{ background: rgba(93,255,177,.75); border-color: rgba(93,255,177,.38); }
+    .dot.warn{ background: rgba(255,213,106,.8); border-color: rgba(255,213,106,.40); }
+    .dot.bad{ background: rgba(255,107,139,.8); border-color: rgba(255,107,139,.40); }
+
+    .span-8{ grid-column: span 8; }
+    .span-4{ grid-column: span 4; }
+    .span-12{ grid-column: span 12; }
+
+    .card-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 12px;
+    }
+    .card-title h3{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.1px;
+    }
+    .card-title .hint{
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    /* Filters */
+    .filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 14px;
+    }
+    .input, select{
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      outline: none;
+      font-size: 13px;
+      min-width: 180px;
+    }
+    .input::placeholder{ color: rgba(234,240,255,.45); }
+    select{ min-width: 200px; }
+
+    /* Table */
+    .table-wrap{
+      overflow:auto;
+      border-top: 1px solid var(--stroke);
+      background: var(--bg-card-2);
+    }
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+    th, td{
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: 13px;
+      color: rgba(234,240,255,.92);
+      white-space: nowrap;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted2);
+      letter-spacing:.2px;
+      font-weight: 700;
+      background: rgba(255,255,255,.02);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tag.good{ border-color: rgba(93,255,177,.30); }
+    .tag.warn{ border-color: rgba(255,213,106,.30); }
+    .tag.bad{ border-color: rgba(255,107,139,.30); }
+
+    /* Login panel */
+    .overlay{
+      position: fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      z-index: 50;
+    }
+    .overlay.show{ display:flex; }
+    .login{
+      width: min(520px, 100%);
+      border: 1px solid var(--stroke-2);
+      background: rgba(10, 14, 35, .88);
+      border-radius: 22px;
+      box-shadow: 0 28px 120px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .login .head{
+      padding: 18px 18px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(34,211,238,.10));
+    }
+    .login h3{ margin:0; font-size: 16px; }
+    .login p{ margin:8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .login .body{ padding: 16px 18px 18px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row > *{ flex: 1; min-width: 200px; }
+    .help{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted2);
+    }
+    .error{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,107,139,.95);
+      display:none;
+    }
+
+    /* Footer note */
+    .note{
+      margin-top: 16px;
+      color: var(--muted2);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 980px){
+      .kpi{ grid-column: span 6; }
+      .span-8{ grid-column: span 12; }
+      .span-4{ grid-column: span 12; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- tiny rocket-ish glyph -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M13.5 3c-3.9 1.4-7.1 4.7-8.4 8.7-.3.9-.4 1.8-.4 2.8v.5l3.2-1.1 3.6 3.6L10.4 21h.5c1 0 1.9-.1 2.8-.4 4-1.3 7.3-4.5 8.7-8.4.7-2.1.7-4.4 0-6.5-2.1-.7-4.4-.7-6.5 0Z" stroke="rgba(255,255,255,.9)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9.6 14.4l-4.9 1.7M14.4 9.6l1.7-4.9" stroke="rgba(255,255,255,.65)" stroke-width="1.3" stroke-linecap="round"/>
+            <circle cx="15.4" cy="8.6" r="1.6" stroke="rgba(255,255,255,.85)" stroke-width="1.3"/>
+          </svg>
+        </div>
+        <div>
+          <h1>RapidReviewer Admin</h1>
+          <div class="sub" id="companySub">Not signed in</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span class="pill" id="periodPill">Period: last 14 days</span>
+        <a class="btn ghost" href="./index.html">← Back to site</a>
+        <button class="btn" id="btnSignIn">Sign in</button>
+        <button class="btn" id="btnSignOut" style="display:none;">Sign out</button>
+      </div>
+    </div>
+
+    <div class="page-title">
+      <div>
+        <h2>Company metrics</h2>
+        <p>
+          Dummy data dashboard showing adoption + engineering activity. Includes “engineers actively merging PRs”
+          (defined here as having ≥1 merged PR within the selected period).
+        </p>
+      </div>
+
+      <div class="filters">
+        <select id="periodSelect" title="Period">
+          <option value="7">Last 7 days</option>
+          <option value="14" selected>Last 14 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+
+        <select id="teamSelect" title="Team">
+          <option value="all" selected>All teams</option>
+        </select>
+
+        <input class="input" id="searchInput" placeholder="Search user (name/email)..." />
+        <button class="btn" id="btnRefresh">Refresh dummy data</button>
+        <button class="btn primary" id="btnExport">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid kpis" id="kpiGrid">
+      <div class="card kpi">
+        <div class="inner">
+          <p class="label">Engineers actively merging PRs</p>
+          <p class="value" id="kpiActiveMergers">—</p>
+          <div class="delta"><span class="dot good"></span><span id="kpiActiveMergersDelta">—</span></div>
+        </div>
+      </div>
+
+      <div class="card kpi">
+        <div class="inner">
+          <p class="label">Merged PRs</p>
+          <p class="value" id="kpiMergedPRs">—</p>
+          <div class="delta"><span class="dot"></span><span id="kpiMergedPRsDelta">—</span></div>
+        </div>
+      </div>
+
+      <div class="card kpi">
+        <div class="inner">
+          <p class="label">Avg PR cycle time</p>
+          <p class="value" id="kpiCycleTime">—</p>
+          <div class="delta"><span class="dot warn"></span><span id="kpiCycleTimeDelta">—</span></div>
+        </div>
+      </div>
+
+      <div class="card kpi">
+        <div class="inner">
+          <p class="label">Impact bullets generated</p>
+          <p class="value" id="kpiBullets">—</p>
+          <div class="delta"><span class="dot good"></span><span id="kpiBulletsDelta">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts + Breakdown -->
+    <div class="grid main">
+      <div class="card span-8">
+        <div class="inner">
+          <div class="card-title">
+            <h3>Activity over time</h3>
+            <div class="hint" id="chartHint">Merged PRs + active engineers</div>
+          </div>
+          <canvas id="chartActivity" height="120"></canvas>
+          <div class="note">
+            “Active engineers” = unique engineers with ≥1 merged PR on that day.
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-4">
+        <div class="inner">
+          <div class="card-title">
+            <h3>Team breakdown</h3>
+            <div class="hint">Share of merged PRs</div>
+          </div>
+          <canvas id="chartTeams" height="210"></canvas>
+          <div class="note">
+            In the real version, this should be backed by your org/team mapping (GitHub teams or internal directory).
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card span-12">
+        <div class="inner">
+          <div class="card-title">
+            <h3>Users</h3>
+            <div class="hint" id="usersHint">Showing —</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Team</th>
+                <th>Merged PRs (period)</th>
+                <th>PRs opened (period)</th>
+                <th>Avg cycle time</th>
+                <th>Avg review time</th>
+                <th>Impact bullets</th>
+                <th>Last activity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:18px;">
+      <strong>Wiring to your API later:</strong> replace <code>getDummyMetrics()</code> with a <code>fetch()</code> call to your Lambda/API Gateway,
+      pass a bearer token (Cognito), and return the same JSON shape. Keep this UI layer unchanged.
+    </div>
+  </div>
+
+  <!-- Login overlay (demo) -->
+  <div class="overlay" id="overlay">
+    <div class="login">
+      <div class="head">
+        <h3>Company sign in</h3>
+        <p>
+          Demo-only login so you can share this page and iterate on the UI. For production,
+          use Cognito + JWT and enforce auth server-side.
+        </p>
+      </div>
+      <div class="body">
+        <div class="row">
+          <input class="input" id="loginCompany" placeholder="Company (e.g. Acme Ltd)" />
+          <input class="input" id="loginEmail" placeholder="Admin email" />
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <input class="input" id="loginPassword" placeholder="Password (demo: admin)" type="password" />
+          <button class="btn primary" id="btnDoLogin">Sign in</button>
+        </div>
+        <div class="help">Demo password: <code>admin</code></div>
+        <div class="error" id="loginError">Invalid password</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Demo session (client-side only)
+    // -----------------------------
+    const SESSION_KEY = "rr_admin_session_v1";
+
+    function getSession(){
+      try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
+    }
+    function setSession(session){
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    }
+    function clearSession(){
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    const els = {
+      overlay: document.getElementById("overlay"),
+      btnSignIn: document.getElementById("btnSignIn"),
+      btnSignOut: document.getElementById("btnSignOut"),
+      btnDoLogin: document.getElementById("btnDoLogin"),
+      loginCompany: document.getElementById("loginCompany"),
+      loginEmail: document.getElementById("loginEmail"),
+      loginPassword: document.getElementById("loginPassword"),
+      loginError: document.getElementById("loginError"),
+      companySub: document.getElementById("companySub"),
+
+      periodSelect: document.getElementById("periodSelect"),
+      teamSelect: document.getElementById("teamSelect"),
+      searchInput: document.getElementById("searchInput"),
+      btnRefresh: document.getElementById("btnRefresh"),
+      btnExport: document.getElementById("btnExport"),
+
+      periodPill: document.getElementById("periodPill"),
+      kpiActiveMergers: document.getElementById("kpiActiveMergers"),
+      kpiActiveMergersDelta: document.getElementById("kpiActiveMergersDelta"),
+      kpiMergedPRs: document.getElementById("kpiMergedPRs"),
+      kpiMergedPRsDelta: document.getElementById("kpiMergedPRsDelta"),
+      kpiCycleTime: document.getElementById("kpiCycleTime"),
+      kpiCycleTimeDelta: document.getElementById("kpiCycleTimeDelta"),
+      kpiBullets: document.getElementById("kpiBullets"),
+      kpiBulletsDelta: document.getElementById("kpiBulletsDelta"),
+
+      usersHint: document.getElementById("usersHint"),
+      usersTbody: document.getElementById("usersTbody"),
+
+      chartHint: document.getElementById("chartHint"),
+      chartActivity: document.getElementById("chartActivity"),
+      chartTeams: document.getElementById("chartTeams"),
+    };
+
+    function openLogin(){
+      els.loginError.style.display = "none";
+      els.overlay.classList.add("show");
+      els.loginCompany.value = "Acme Ltd";
+      els.loginEmail.value = "admin@acme.dev";
+      els.loginPassword.value = "";
+      setTimeout(() => els.loginPassword.focus(), 80);
+    }
+    function closeLogin(){ els.overlay.classList.remove("show"); }
+
+    els.btnSignIn.addEventListener("click", openLogin);
+    els.overlay.addEventListener("click", (e) => { if(e.target === els.overlay) closeLogin(); });
+    els.btnSignOut.addEventListener("click", () => {
+      clearSession();
+      applySessionToUI();
+      renderAll();
+    });
+
+    els.btnDoLogin.addEventListener("click", () => {
+      const pwd = els.loginPassword.value.trim();
+      if (pwd !== "admin"){
+        els.loginError.style.display = "block";
+        return;
+      }
+      const session = {
+        company: (els.loginCompany.value || "Acme Ltd").trim(),
+        email: (els.loginEmail.value || "admin@acme.dev").trim(),
+        ts: Date.now()
+      };
+      setSession(session);
+      closeLogin();
+      applySessionToUI();
+      renderAll();
+    });
+
+    function applySessionToUI(){
+      const s = getSession();
+      const signedIn = !!s;
+      els.btnSignIn.style.display = signedIn ? "none" : "inline-flex";
+      els.btnSignOut.style.display = signedIn ? "inline-flex" : "none";
+      els.companySub.textContent = signedIn ? `${s.company} · ${s.email}` : "Not signed in";
+    }
+
+    // -----------------------------
+    // Dummy data generator
+    // -----------------------------
+    function seededRand(seed){
+      // deterministic-ish pseudo-random
+      let x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function daysAgoISO(days){
+      const d = new Date();
+      d.setDate(d.getDate() - days);
+      return d.toISOString().slice(0,10);
+    }
+
+    function formatHours(h){
+      if (!isFinite(h)) return "—";
+      if (h < 24) return `${h.toFixed(1)}h`;
+      return `${(h/24).toFixed(1)}d`;
+    }
+
+    function formatDateTime(ts){
+      const d = new Date(ts);
+      const date = d.toISOString().slice(0,10);
+      const time = d.toISOString().slice(11,16);
+      return `${date} ${time}Z`;
+    }
+
+    function getDummyMetrics({company, periodDays}){
+      const seedBase = (company || "Acme Ltd").length * 1337 + periodDays * 17;
+
+      const teams = ["Platform", "Mobile", "Web", "Data", "Infra"];
+      const users = Array.from({length: 18}, (_, i) => {
+        const team = teams[i % teams.length];
+        const s = seedBase + i * 101;
+        const merged = Math.floor(1 + seededRand(s) * 12);     // per period
+        const opened = merged + Math.floor(seededRand(s+1) * 8);
+        const cycleH = 8 + seededRand(s+2) * 120;             // 8h .. 128h
+        const reviewH = 1 + seededRand(s+3) * 24;             // 1h .. 25h
+        const bullets = Math.floor(merged * (2 + seededRand(s+4) * 5));
+        const lastActivity = Date.now() - Math.floor(seededRand(s+5) * periodDays * 24 * 3600 * 1000);
+
+        const active = merged >= 2; // simple dummy definition for status
+        const status = active ? "Active" : (merged === 1 ? "Warming up" : "Inactive");
+
+        return {
+          id: `u_${i+1}`,
+          name: ["Alex","Sam","Taylor","Jordan","Casey","Morgan","Jamie","Avery","Riley","Cameron","Drew","Robin","Quinn","Skyler","Reese","Hayden","Parker","Emerson"][i] + " " +
+                ["W.","B.","K.","L.","S.","M.","J.","T.","R.","C.","D.","H.","P.","G.","N.","F.","E.","O."][i],
+          email: `engineer${i+1}@${(company || "acme").toLowerCase().replace(/\s+/g,'')}.dev`,
+          team,
+          mergedPRs: merged,
+          openedPRs: opened,
+          avgCycleHours: cycleH,
+          avgReviewHours: reviewH,
+          bullets,
+          lastActivity,
+          status,
+        };
+      });
+
+      // time series by day
+      const days = Array.from({length: periodDays}, (_, idx) => {
+        const dayIndex = periodDays - 1 - idx;
+        const date = daysAgoISO(dayIndex);
+        const s = seedBase + idx * 29;
+
+        // merged PRs that day
+        const merged = Math.max(0, Math.floor(seededRand(s) * 18));
+        // active engineers that day
+        const active = Math.max(0, Math.floor(2 + seededRand(s+1) * 10));
+
+        return { date, mergedPRs: merged, activeEngineers: active };
+      });
+
+      // Team shares
+      const teamMerged = {};
+      for (const t of teams) teamMerged[t] = 0;
+      for (const u of users) teamMerged[u.team] += u.mergedPRs;
+
+      return {
+        company: company || "Acme Ltd",
+        periodDays,
+        teams,
+        users,
+        series: days,
+        teamMerged
+      };
+    }
+
+    // -----------------------------
+    // Rendering / state
+    // -----------------------------
+    let state = {
+      dataset: null,
+      charts: { activity: null, teams: null }
+    };
+
+    function getFilters(){
+      return {
+        periodDays: parseInt(els.periodSelect.value, 10),
+        team: els.teamSelect.value,
+        q: (els.searchInput.value || "").trim().toLowerCase()
+      };
+    }
+
+    function computeKPIs(ds, {team, q}){
+      let users = ds.users.slice();
+
+      if (team !== "all") users = users.filter(u => u.team === team);
+      if (q) users = users.filter(u => (u.name + " " + u.email).toLowerCase().includes(q));
+
+      const mergedTotal = users.reduce((a,u)=>a+u.mergedPRs, 0);
+      const activeMergers = users.filter(u => u.mergedPRs >= 1).length;
+
+      const avgCycle = users.length ? users.reduce((a,u)=>a+u.avgCycleHours, 0) / users.length : 0;
+      const avgBullets = users.reduce((a,u)=>a+u.bullets, 0);
+
+      return { users, mergedTotal, activeMergers, avgCycle, avgBullets };
+    }
+
+    function setTeamOptions(ds){
+      const current = els.teamSelect.value;
+      els.teamSelect.innerHTML = `<option value="all">All teams</option>` + ds.teams.map(t => `<option value="${t}">${t}</option>`).join("");
+      if ([...els.teamSelect.options].some(o => o.value === current)) els.teamSelect.value = current;
+    }
+
+    function renderKPIs(kpis, periodDays){
+      els.kpiActiveMergers.textContent = kpis.activeMergers.toString();
+      els.kpiMergedPRs.textContent = kpis.mergedTotal.toString();
+      els.kpiCycleTime.textContent = formatHours(kpis.avgCycle);
+      els.kpiBullets.textContent = kpis.avgBullets.toString();
+
+      // Dummy deltas (compare vs previous period, fake but plausible)
+      const bump = (x) => Math.round(x * (0.84 + Math.random()*0.34));
+      const prevActive = bump(kpis.activeMergers);
+      const prevMerged = bump(kpis.mergedTotal);
+      const prevCycle = kpis.avgCycle * (0.90 + Math.random()*0.25);
+      const prevBullets = bump(kpis.avgBullets);
+
+      const fmtDelta = (curr, prev, unit="") => {
+        const diff = curr - prev;
+        const pct = prev > 0 ? (diff / prev) * 100 : 0;
+        const sign = diff >= 0 ? "+" : "";
+        return `vs previous ${periodDays}d: ${sign}${diff}${unit} (${sign}${pct.toFixed(0)}%)`;
+      };
+
+      els.kpiActiveMergersDelta.textContent = fmtDelta(kpis.activeMergers, prevActive);
+      els.kpiMergedPRsDelta.textContent = fmtDelta(kpis.mergedTotal, prevMerged);
+      els.kpiCycleTimeDelta.textContent = `vs previous ${periodDays}d: ${formatHours(kpis.avgCycle)} (prev ${formatHours(prevCycle)})`;
+      els.kpiBulletsDelta.textContent = fmtDelta(kpis.avgBullets, prevBullets);
+    }
+
+    function statusTag(status){
+      if (status === "Active") return `<span class="tag good"><span class="dot good"></span>${status}</span>`;
+      if (status === "Warming up") return `<span class="tag warn"><span class="dot warn"></span>${status}</span>`;
+      return `<span class="tag bad"><span class="dot bad"></span>${status}</span>`;
+    }
+
+    function renderTable(users){
+      els.usersHint.textContent = `Showing ${users.length} user(s)`;
+      els.usersTbody.innerHTML = users.map(u => `
+        <tr>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-weight:700;">${escapeHtml(u.name)}</span>
+              <span style="font-size:12px;color:rgba(234,240,255,.62)">${escapeHtml(u.email)}</span>
+            </div>
+          </td>
+          <td>${escapeHtml(u.team)}</td>
+          <td>${u.mergedPRs}</td>
+          <td>${u.openedPRs}</td>
+          <td>${formatHours(u.avgCycleHours)}</td>
+          <td>${formatHours(u.avgReviewHours)}</td>
+          <td>${u.bullets}</td>
+          <td>${formatDateTime(u.lastActivity)}</td>
+          <td>${statusTag(u.status)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderCharts(ds){
+      // Activity line chart
+      const labels = ds.series.map(x => x.date);
+      const merged = ds.series.map(x => x.mergedPRs);
+      const active = ds.series.map(x => x.activeEngineers);
+
+      if (state.charts.activity) state.charts.activity.destroy();
+      state.charts.activity = new Chart(els.chartActivity, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "Merged PRs", data: merged, tension: 0.35 },
+            { label: "Active engineers", data: active, tension: 0.35 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "rgba(234,240,255,.75)" } },
+            tooltip: { mode: "index", intersect: false }
+          },
+          interaction: { mode: "index", intersect: false },
+          scales: {
+            x: { ticks: { color: "rgba(234,240,255,.55)", maxRotation: 0, autoSkip: true }, grid: { color: "rgba(255,255,255,.06)" } },
+            y: { ticks: { color: "rgba(234,240,255,.55)" }, grid: { color: "rgba(255,255,255,.06)" } }
+          }
+        }
+      });
+
+      // Team doughnut chart
+      const teamLabels = Object.keys(ds.teamMerged);
+      const teamValues = teamLabels.map(t => ds.teamMerged[t]);
+
+      if (state.charts.teams) state.charts.teams.destroy();
+      state.charts.teams = new Chart(els.chartTeams, {
+        type: "doughnut",
+        data: {
+          labels: teamLabels,
+          datasets: [{ label: "Merged PRs", data: teamValues }]
+        },
+        options: {
+          plugins: { legend: { position: "bottom", labels: { color: "rgba(234,240,255,.75)" } } }
+        }
+      });
+    }
+
+    function renderAll(){
+      const session = getSession();
+      const company = session?.company || "Acme Ltd";
+      const { periodDays, team, q } = getFilters();
+
+      els.periodPill.textContent = `Period: last ${periodDays} days`;
+
+      state.dataset = getDummyMetrics({ company, periodDays });
+      setTeamOptions(state.dataset);
+
+      const kpis = computeKPIs(state.dataset, { team, q });
+      renderKPIs(kpis, periodDays);
+      renderTable(kpis.users);
+      renderCharts(state.dataset);
+    }
+
+    // CSV export
+    function toCSV(rows){
+      const esc = (v) => `"${String(v ?? "").replaceAll('"','""')}"`;
+      return rows.map(r => r.map(esc).join(",")).join("\n");
+    }
+    function download(filename, text){
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], {type:"text/csv;charset=utf-8"}));
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    els.btnExport.addEventListener("click", () => {
+      const { team, q, periodDays } = getFilters();
+      const ds = state.dataset;
+      const k = computeKPIs(ds, { team, q });
+
+      const header = ["name","email","team","mergedPRs","openedPRs","avgCycleHours","avgReviewHours","bullets","lastActivityISO","status"];
+      const rows = [
+        header,
+        ...k.users.map(u => [
+          u.name, u.email, u.team, u.mergedPRs, u.openedPRs,
+          u.avgCycleHours.toFixed(2), u.avgReviewHours.toFixed(2),
+          u.bullets, new Date(u.lastActivity).toISOString(), u.status
+        ])
+      ];
+
+      const csv = toCSV(rows);
+      const company = (getSession()?.company || "company").toLowerCase().replace(/\s+/g,"-");
+      download(`rapidreviewer-admin-${company}-${periodDays}d.csv`, csv);
+    });
+
+    // Filter events
+    els.periodSelect.addEventListener("change", renderAll);
+    els.teamSelect.addEventListener("change", renderAll);
+    els.searchInput.addEventListener("input", () => {
+      // just re-render the table + KPIs without regenerating dummy data
+      const { team, q, periodDays } = getFilters();
+      const ds = state.dataset;
+      const kpis = computeKPIs(ds, { team, q });
+      renderKPIs(kpis, periodDays);
+      renderTable(kpis.users);
+    });
+    els.btnRefresh.addEventListener("click", renderAll);
+
+    // Init
+    applySessionToUI();
+    renderAll();
+  </script>
+</body>
+</html>
