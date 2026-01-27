@@ -316,6 +316,31 @@
     .tag.warn{ border-color: rgba(255,213,106,.30); }
     .tag.bad{ border-color: rgba(255,107,139,.30); }
 
+    /* Toggle pills (for team vs work type) */
+    .seg{
+      display:inline-flex;
+      gap:8px;
+      padding: 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+    }
+    .seg button{
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(234,240,255,.70);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor:pointer;
+    }
+    .seg button.active{
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.14);
+      color: rgba(234,240,255,.92);
+    }
+
     /* Login panel */
     .overlay{
       position: fixed;
@@ -380,7 +405,6 @@
     <div class="topbar">
       <div class="brand">
         <div class="logo" aria-hidden="true">
-          <!-- tiny rocket-ish glyph -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M13.5 3c-3.9 1.4-7.1 4.7-8.4 8.7-.3.9-.4 1.8-.4 2.8v.5l3.2-1.1 3.6 3.6L10.4 21h.5c1 0 1.9-.1 2.8-.4 4-1.3 7.3-4.5 8.7-8.4.7-2.1.7-4.4 0-6.5-2.1-.7-4.4-.7-6.5 0Z" stroke="rgba(255,255,255,.9)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M9.6 14.4l-4.9 1.7M14.4 9.6l1.7-4.9" stroke="rgba(255,255,255,.65)" stroke-width="1.3" stroke-linecap="round"/>
@@ -405,8 +429,8 @@
       <div>
         <h2>Company metrics</h2>
         <p>
-          Dummy data dashboard showing adoption + engineering activity. Includes “engineers actively merging PRs”
-          (defined here as having ≥1 merged PR within the selected period).
+          Dummy data dashboard showing engineering activity and adoption. “Engineers actively merging PRs” is defined as
+          having ≥1 merged PR within the selected period.
         </p>
       </div>
 
@@ -447,17 +471,17 @@
 
       <div class="card kpi">
         <div class="inner">
-          <p class="label">Avg PR cycle time</p>
-          <p class="value" id="kpiCycleTime">—</p>
-          <div class="delta"><span class="dot warn"></span><span id="kpiCycleTimeDelta">—</span></div>
+          <p class="label">Engineers (seats provisioned)</p>
+          <p class="value" id="kpiSeats">—</p>
+          <div class="delta"><span class="dot"></span><span id="kpiSeatsDelta">—</span></div>
         </div>
       </div>
 
       <div class="card kpi">
         <div class="inner">
-          <p class="label">Impact bullets generated</p>
-          <p class="value" id="kpiBullets">—</p>
-          <div class="delta"><span class="dot good"></span><span id="kpiBulletsDelta">—</span></div>
+          <p class="label">Tagged merged PRs</p>
+          <p class="value" id="kpiTaggedMerged">—</p>
+          <div class="delta"><span class="dot good"></span><span id="kpiTaggedMergedDelta">—</span></div>
         </div>
       </div>
     </div>
@@ -480,11 +504,17 @@
       <div class="card span-4">
         <div class="inner">
           <div class="card-title">
-            <h3>Team breakdown</h3>
-            <div class="hint">Share of merged PRs</div>
+            <h3 id="breakdownTitle">Team breakdown</h3>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="seg" role="tablist" aria-label="Breakdown toggle">
+                <button id="btnBreakdownTeam" class="active" role="tab" aria-selected="true">Team</button>
+                <button id="btnBreakdownType" role="tab" aria-selected="false">Work type</button>
+              </div>
+            </div>
           </div>
-          <canvas id="chartTeams" height="210"></canvas>
-          <div class="note">
+          <div class="hint" id="breakdownHint" style="margin-top:-6px; margin-bottom:10px;">Share of merged PRs</div>
+          <canvas id="chartBreakdown" height="210"></canvas>
+          <div class="note" id="breakdownNote">
             In the real version, this should be backed by your org/team mapping (GitHub teams or internal directory).
           </div>
         </div>
@@ -505,10 +535,7 @@
                 <th>User</th>
                 <th>Team</th>
                 <th>Merged PRs (period)</th>
-                <th>PRs opened (period)</th>
-                <th>Avg cycle time</th>
-                <th>Avg review time</th>
-                <th>Impact bullets</th>
+                <th>Top work type (period)</th>
                 <th>Last activity</th>
                 <th>Status</th>
               </tr>
@@ -588,18 +615,26 @@
       kpiActiveMergersDelta: document.getElementById("kpiActiveMergersDelta"),
       kpiMergedPRs: document.getElementById("kpiMergedPRs"),
       kpiMergedPRsDelta: document.getElementById("kpiMergedPRsDelta"),
-      kpiCycleTime: document.getElementById("kpiCycleTime"),
-      kpiCycleTimeDelta: document.getElementById("kpiCycleTimeDelta"),
-      kpiBullets: document.getElementById("kpiBullets"),
-      kpiBulletsDelta: document.getElementById("kpiBulletsDelta"),
+      kpiSeats: document.getElementById("kpiSeats"),
+      kpiSeatsDelta: document.getElementById("kpiSeatsDelta"),
+      kpiTaggedMerged: document.getElementById("kpiTaggedMerged"),
+      kpiTaggedMergedDelta: document.getElementById("kpiTaggedMergedDelta"),
 
       usersHint: document.getElementById("usersHint"),
       usersTbody: document.getElementById("usersTbody"),
 
       chartHint: document.getElementById("chartHint"),
       chartActivity: document.getElementById("chartActivity"),
-      chartTeams: document.getElementById("chartTeams"),
+      breakdownTitle: document.getElementById("breakdownTitle"),
+      breakdownHint: document.getElementById("breakdownHint"),
+      breakdownNote: document.getElementById("breakdownNote"),
+      chartBreakdown: document.getElementById("chartBreakdown"),
+
+      btnBreakdownTeam: document.getElementById("btnBreakdownTeam"),
+      btnBreakdownType: document.getElementById("btnBreakdownType"),
     };
+
+    let breakdownMode = "team"; // "team" | "type"
 
     function openLogin(){
       els.loginError.style.display = "none";
@@ -648,7 +683,6 @@
     // Dummy data generator
     // -----------------------------
     function seededRand(seed){
-      // deterministic-ish pseudo-random
       let x = Math.sin(seed) * 10000;
       return x - Math.floor(x);
     }
@@ -659,12 +693,6 @@
       return d.toISOString().slice(0,10);
     }
 
-    function formatHours(h){
-      if (!isFinite(h)) return "—";
-      if (h < 24) return `${h.toFixed(1)}h`;
-      return `${(h/24).toFixed(1)}d`;
-    }
-
     function formatDateTime(ts){
       const d = new Date(ts);
       const date = d.toISOString().slice(0,10);
@@ -672,22 +700,64 @@
       return `${date} ${time}Z`;
     }
 
+    function pickWeighted(labels, weights, r){
+      const total = weights.reduce((a,b)=>a+b,0);
+      let acc = 0;
+      for (let i=0;i<labels.length;i++){
+        acc += weights[i] / total;
+        if (r <= acc) return labels[i];
+      }
+      return labels[labels.length-1];
+    }
+
     function getDummyMetrics({company, periodDays}){
       const seedBase = (company || "Acme Ltd").length * 1337 + periodDays * 17;
 
       const teams = ["Platform", "Mobile", "Web", "Data", "Infra"];
+      const workTypes = ["Feature", "Bug fix", "Refactor", "Chore", "Docs"];
+
+      // Totals
+      const teamMerged = Object.fromEntries(teams.map(t => [t, 0]));
+      const typeMerged = Object.fromEntries(workTypes.map(t => [t, 0]));
+      let taggedMergedTotal = 0;
+
       const users = Array.from({length: 18}, (_, i) => {
         const team = teams[i % teams.length];
         const s = seedBase + i * 101;
-        const merged = Math.floor(1 + seededRand(s) * 12);     // per period
-        const opened = merged + Math.floor(seededRand(s+1) * 8);
-        const cycleH = 8 + seededRand(s+2) * 120;             // 8h .. 128h
-        const reviewH = 1 + seededRand(s+3) * 24;             // 1h .. 25h
-        const bullets = Math.floor(merged * (2 + seededRand(s+4) * 5));
+
+        const merged = Math.floor(seededRand(s) * 14); // 0..13
         const lastActivity = Date.now() - Math.floor(seededRand(s+5) * periodDays * 24 * 3600 * 1000);
 
-        const active = merged >= 2; // simple dummy definition for status
-        const status = active ? "Active" : (merged === 1 ? "Warming up" : "Inactive");
+        // Tag distribution for merged PRs
+        // Some PRs can be "untagged" (to make tagged coverage meaningful)
+        const untagged = merged === 0 ? 0 : Math.floor(seededRand(s+6) * Math.min(3, merged + 1)); // 0..2 (ish)
+        const tagged = Math.max(0, merged - untagged);
+
+        const typeCounts = Object.fromEntries(workTypes.map(t => [t, 0]));
+
+        for (let k=0;k<tagged;k++){
+          // Slightly biased towards Feature/Bug fix
+          const t = pickWeighted(workTypes, [3.6, 2.8, 1.8, 1.3, 0.9], seededRand(s + 200 + k));
+          typeCounts[t] += 1;
+        }
+
+        // roll up totals
+        teamMerged[team] += merged;
+        for (const wt of workTypes) typeMerged[wt] += typeCounts[wt];
+        taggedMergedTotal += tagged;
+
+        const active = merged >= 1;
+        const status = active ? "Active" : "Inactive";
+
+        const topType = (() => {
+          let best = "—", bestV = 0;
+          for (const wt of workTypes){
+            if (typeCounts[wt] > bestV){ bestV = typeCounts[wt]; best = wt; }
+          }
+          if (merged === 0) return "—";
+          if (bestV === 0) return "Untagged";
+          return best;
+        })();
 
         return {
           id: `u_${i+1}`,
@@ -696,41 +766,34 @@
           email: `engineer${i+1}@${(company || "acme").toLowerCase().replace(/\s+/g,'')}.dev`,
           team,
           mergedPRs: merged,
-          openedPRs: opened,
-          avgCycleHours: cycleH,
-          avgReviewHours: reviewH,
-          bullets,
+          typeCounts,
+          topType,
+          taggedMerged: tagged,
           lastActivity,
           status,
         };
       });
 
       // time series by day
-      const days = Array.from({length: periodDays}, (_, idx) => {
+      const series = Array.from({length: periodDays}, (_, idx) => {
         const dayIndex = periodDays - 1 - idx;
         const date = daysAgoISO(dayIndex);
         const s = seedBase + idx * 29;
-
-        // merged PRs that day
-        const merged = Math.max(0, Math.floor(seededRand(s) * 18));
-        // active engineers that day
-        const active = Math.max(0, Math.floor(2 + seededRand(s+1) * 10));
-
-        return { date, mergedPRs: merged, activeEngineers: active };
+        const mergedPRs = Math.max(0, Math.floor(seededRand(s) * 18));
+        const activeEngineers = Math.max(0, Math.floor(1 + seededRand(s+1) * 12));
+        return { date, mergedPRs, activeEngineers };
       });
-
-      // Team shares
-      const teamMerged = {};
-      for (const t of teams) teamMerged[t] = 0;
-      for (const u of users) teamMerged[u.team] += u.mergedPRs;
 
       return {
         company: company || "Acme Ltd",
         periodDays,
         teams,
+        workTypes,
         users,
-        series: days,
-        teamMerged
+        series,
+        teamMerged,
+        typeMerged,
+        taggedMergedTotal
       };
     }
 
@@ -739,7 +802,7 @@
     // -----------------------------
     let state = {
       dataset: null,
-      charts: { activity: null, teams: null }
+      charts: { activity: null, breakdown: null }
     };
 
     function getFilters(){
@@ -750,19 +813,13 @@
       };
     }
 
-    function computeKPIs(ds, {team, q}){
-      let users = ds.users.slice();
-
-      if (team !== "all") users = users.filter(u => u.team === team);
-      if (q) users = users.filter(u => (u.name + " " + u.email).toLowerCase().includes(q));
-
-      const mergedTotal = users.reduce((a,u)=>a+u.mergedPRs, 0);
-      const activeMergers = users.filter(u => u.mergedPRs >= 1).length;
-
-      const avgCycle = users.length ? users.reduce((a,u)=>a+u.avgCycleHours, 0) / users.length : 0;
-      const avgBullets = users.reduce((a,u)=>a+u.bullets, 0);
-
-      return { users, mergedTotal, activeMergers, avgCycle, avgBullets };
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
     function setTeamOptions(ds){
@@ -771,35 +828,59 @@
       if ([...els.teamSelect.options].some(o => o.value === current)) els.teamSelect.value = current;
     }
 
-    function renderKPIs(kpis, periodDays){
-      els.kpiActiveMergers.textContent = kpis.activeMergers.toString();
-      els.kpiMergedPRs.textContent = kpis.mergedTotal.toString();
-      els.kpiCycleTime.textContent = formatHours(kpis.avgCycle);
-      els.kpiBullets.textContent = kpis.avgBullets.toString();
+    function getBaseUsers(ds, team){
+      if (team === "all") return ds.users.slice();
+      return ds.users.filter(u => u.team === team);
+    }
 
-      // Dummy deltas (compare vs previous period, fake but plausible)
+    function getDisplayUsers(baseUsers, q){
+      if (!q) return baseUsers;
+      return baseUsers.filter(u => (u.name + " " + u.email).toLowerCase().includes(q));
+    }
+
+    function computeKPIs(ds, team){
+      const baseUsers = getBaseUsers(ds, team);
+      const seats = baseUsers.length;
+
+      const mergedTotal = baseUsers.reduce((a,u)=>a+u.mergedPRs, 0);
+      const activeMergers = baseUsers.filter(u => u.mergedPRs >= 1).length;
+      const activePct = seats > 0 ? (activeMergers / seats) * 100 : 0;
+
+      const taggedMerged = baseUsers.reduce((a,u)=>a+u.taggedMerged, 0);
+      const taggedPct = mergedTotal > 0 ? (taggedMerged / mergedTotal) * 100 : 0;
+
+      return { seats, mergedTotal, activeMergers, activePct, taggedMerged, taggedPct };
+    }
+
+    function renderKPIs(kpis, periodDays){
+      // Primary KPI value shows count + %
+      els.kpiActiveMergers.textContent = `${kpis.activeMergers} (${kpis.activePct.toFixed(0)}%)`;
+      els.kpiMergedPRs.textContent = kpis.mergedTotal.toString();
+      els.kpiSeats.textContent = kpis.seats.toString();
+      els.kpiTaggedMerged.textContent = `${kpis.taggedMerged} (${kpis.taggedPct.toFixed(0)}%)`;
+
+      // Dummy deltas (compare vs previous period)
       const bump = (x) => Math.round(x * (0.84 + Math.random()*0.34));
       const prevActive = bump(kpis.activeMergers);
       const prevMerged = bump(kpis.mergedTotal);
-      const prevCycle = kpis.avgCycle * (0.90 + Math.random()*0.25);
-      const prevBullets = bump(kpis.avgBullets);
+      const prevSeats  = kpis.seats; // seats usually stable
+      const prevTagged = bump(kpis.taggedMerged);
 
-      const fmtDelta = (curr, prev, unit="") => {
+      const fmtDelta = (curr, prev) => {
         const diff = curr - prev;
         const pct = prev > 0 ? (diff / prev) * 100 : 0;
         const sign = diff >= 0 ? "+" : "";
-        return `vs previous ${periodDays}d: ${sign}${diff}${unit} (${sign}${pct.toFixed(0)}%)`;
+        return `vs previous ${periodDays}d: ${sign}${diff} (${sign}${pct.toFixed(0)}%)`;
       };
 
-      els.kpiActiveMergersDelta.textContent = fmtDelta(kpis.activeMergers, prevActive);
+      els.kpiActiveMergersDelta.textContent = `Active of ${kpis.seats} engineers · ${fmtDelta(kpis.activeMergers, prevActive)}`;
       els.kpiMergedPRsDelta.textContent = fmtDelta(kpis.mergedTotal, prevMerged);
-      els.kpiCycleTimeDelta.textContent = `vs previous ${periodDays}d: ${formatHours(kpis.avgCycle)} (prev ${formatHours(prevCycle)})`;
-      els.kpiBulletsDelta.textContent = fmtDelta(kpis.avgBullets, prevBullets);
+      els.kpiSeatsDelta.textContent = `Provisioned seats (engineers)`;
+      els.kpiTaggedMergedDelta.textContent = `Coverage of merged PR tags · ${fmtDelta(kpis.taggedMerged, prevTagged)}`;
     }
 
     function statusTag(status){
       if (status === "Active") return `<span class="tag good"><span class="dot good"></span>${status}</span>`;
-      if (status === "Warming up") return `<span class="tag warn"><span class="dot warn"></span>${status}</span>`;
       return `<span class="tag bad"><span class="dot bad"></span>${status}</span>`;
     }
 
@@ -815,23 +896,11 @@
           </td>
           <td>${escapeHtml(u.team)}</td>
           <td>${u.mergedPRs}</td>
-          <td>${u.openedPRs}</td>
-          <td>${formatHours(u.avgCycleHours)}</td>
-          <td>${formatHours(u.avgReviewHours)}</td>
-          <td>${u.bullets}</td>
+          <td>${escapeHtml(u.topType)}</td>
           <td>${formatDateTime(u.lastActivity)}</td>
           <td>${statusTag(u.status)}</td>
         </tr>
       `).join("");
-    }
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
     }
 
     function renderCharts(ds){
@@ -864,22 +933,44 @@
         }
       });
 
-      // Team doughnut chart
-      const teamLabels = Object.keys(ds.teamMerged);
-      const teamValues = teamLabels.map(t => ds.teamMerged[t]);
+      renderBreakdownChart(ds);
+    }
 
-      if (state.charts.teams) state.charts.teams.destroy();
-      state.charts.teams = new Chart(els.chartTeams, {
+    function renderBreakdownChart(ds){
+      const isTeam = breakdownMode === "team";
+
+      const labels = isTeam ? Object.keys(ds.teamMerged) : Object.keys(ds.typeMerged);
+      const values = isTeam ? labels.map(k => ds.teamMerged[k]) : labels.map(k => ds.typeMerged[k]);
+
+      els.breakdownTitle.textContent = isTeam ? "Team breakdown" : "Work type breakdown";
+      els.breakdownHint.textContent = "Share of merged PRs";
+      els.breakdownNote.textContent = isTeam
+        ? "In the real version, this should be backed by your org/team mapping (GitHub teams or internal directory)."
+        : "Work type comes from user-tagged PR categorisation (e.g. feature, bug fix, refactor).";
+
+      if (state.charts.breakdown) state.charts.breakdown.destroy();
+      state.charts.breakdown = new Chart(els.chartBreakdown, {
         type: "doughnut",
-        data: {
-          labels: teamLabels,
-          datasets: [{ label: "Merged PRs", data: teamValues }]
-        },
+        data: { labels, datasets: [{ label: "Merged PRs", data: values }] },
         options: {
-          plugins: { legend: { position: "bottom", labels: { color: "rgba(234,240,255,.75)" } } }
+          plugins: {
+            legend: { position: "bottom", labels: { color: "rgba(234,240,255,.75)" } }
+          }
         }
       });
     }
+
+    function setBreakdownMode(mode){
+      breakdownMode = mode;
+      els.btnBreakdownTeam.classList.toggle("active", mode === "team");
+      els.btnBreakdownType.classList.toggle("active", mode === "type");
+      els.btnBreakdownTeam.setAttribute("aria-selected", mode === "team" ? "true" : "false");
+      els.btnBreakdownType.setAttribute("aria-selected", mode === "type" ? "true" : "false");
+      if (state.dataset) renderBreakdownChart(state.dataset);
+    }
+
+    els.btnBreakdownTeam.addEventListener("click", () => setBreakdownMode("team"));
+    els.btnBreakdownType.addEventListener("click", () => setBreakdownMode("type"));
 
     function renderAll(){
       const session = getSession();
@@ -891,9 +982,14 @@
       state.dataset = getDummyMetrics({ company, periodDays });
       setTeamOptions(state.dataset);
 
-      const kpis = computeKPIs(state.dataset, { team, q });
+      // KPIs should respect TEAM filter, but NOT search filter (search is just for the table)
+      const kpis = computeKPIs(state.dataset, team);
       renderKPIs(kpis, periodDays);
-      renderTable(kpis.users);
+
+      const baseUsers = getBaseUsers(state.dataset, team);
+      const displayUsers = getDisplayUsers(baseUsers, q);
+      renderTable(displayUsers);
+
       renderCharts(state.dataset);
     }
 
@@ -914,15 +1010,20 @@
     els.btnExport.addEventListener("click", () => {
       const { team, q, periodDays } = getFilters();
       const ds = state.dataset;
-      const k = computeKPIs(ds, { team, q });
+      const baseUsers = getBaseUsers(ds, team);
+      const users = getDisplayUsers(baseUsers, q);
 
-      const header = ["name","email","team","mergedPRs","openedPRs","avgCycleHours","avgReviewHours","bullets","lastActivityISO","status"];
+      const header = ["name","email","team","mergedPRs","topWorkType","lastActivityISO","status"];
       const rows = [
         header,
-        ...k.users.map(u => [
-          u.name, u.email, u.team, u.mergedPRs, u.openedPRs,
-          u.avgCycleHours.toFixed(2), u.avgReviewHours.toFixed(2),
-          u.bullets, new Date(u.lastActivity).toISOString(), u.status
+        ...users.map(u => [
+          u.name,
+          u.email,
+          u.team,
+          u.mergedPRs,
+          u.topType,
+          new Date(u.lastActivity).toISOString(),
+          u.status
         ])
       ];
 
@@ -935,12 +1036,11 @@
     els.periodSelect.addEventListener("change", renderAll);
     els.teamSelect.addEventListener("change", renderAll);
     els.searchInput.addEventListener("input", () => {
-      // just re-render the table + KPIs without regenerating dummy data
-      const { team, q, periodDays } = getFilters();
+      const { team, q } = getFilters();
       const ds = state.dataset;
-      const kpis = computeKPIs(ds, { team, q });
-      renderKPIs(kpis, periodDays);
-      renderTable(kpis.users);
+      const baseUsers = getBaseUsers(ds, team);
+      const displayUsers = getDisplayUsers(baseUsers, q);
+      renderTable(displayUsers);
     });
     els.btnRefresh.addEventListener("click", renderAll);
 
