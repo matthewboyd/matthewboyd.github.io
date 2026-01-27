@@ -562,7 +562,7 @@
         `https://${cognitoDomain}/login` +
         `?client_id=${encodeURIComponent(clientId)}` +
         `&response_type=token` +
-        `&scope=${encodeURIComponent("email openid phone")}` +
+        `&scope=${encodeURIComponent("openid email profile")}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
       document.getElementById("login-btn").addEventListener("click", () => {
