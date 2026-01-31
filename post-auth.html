@@ -671,6 +671,11 @@
           <button class="mobile-tab active" data-target="account">Account</button>
           <button class="mobile-tab" data-target="review">Performance review</button>
           <button class="mobile-tab" data-target="github">GitHub import</button>
+
+          <!-- ✅ ADMIN TAB (hidden by default; shown only if role=admin) -->
+          <button class="mobile-tab" id="admin-tab" data-target="admin" style="display:none;">
+            Admin
+          </button>
         </div>
       </nav>
 
@@ -1074,6 +1079,9 @@ Your AI-generated performance review will appear here after you click "Generate 
       const githubPanel = document.querySelector(".mobile-panel-github");
       const reviewPanel = document.querySelector(".mobile-panel-review");
 
+      // ✅ Admin tab ref
+      const adminTabBtn = document.getElementById("admin-tab");
+
       // -----------------------------
       // Auth token + hash handling
       // -----------------------------
@@ -1092,9 +1100,24 @@ Your AI-generated performance review will appear here after you click "Generate 
 
       function persistTokenFromUrl() {
         const params = parseHashParams();
+
+        // ✅ IMPORTANT: store Cognito id_token under the key your app uses everywhere
         if (params.id_token) {
           window.localStorage.setItem("idToken", params.id_token);
         }
+
+        // (Optional but useful): store access token + metadata if present
+        if (params.access_token) {
+          window.localStorage.setItem("accessToken", params.access_token);
+        }
+        if (params.token_type) {
+          window.localStorage.setItem("tokenType", params.token_type);
+        }
+        if (params.expires_in) {
+          const expiresAt = Date.now() + Number(params.expires_in) * 1000;
+          window.localStorage.setItem("tokenExpiresAt", String(expiresAt));
+        }
+
         if (Object.keys(params).length > 0) {
           history.replaceState(null, "", window.location.pathname + window.location.search);
         }
@@ -1247,6 +1270,12 @@ Your AI-generated performance review will appear here after you click "Generate 
           showCopyToast("Couldn’t copy. Select the key and copy manually.", true);
         }
       });
+
+      // ✅ Admin tab show/hide helper (role comes from /user/init)
+      function setAdminTabVisible(isAdmin) {
+        if (!adminTabBtn) return;
+        adminTabBtn.style.display = isAdmin ? "" : "none";
+      }
 
       function setSubscribedUI() {
         subscriptionBadge.textContent = "Active";
@@ -1407,6 +1436,11 @@ Your AI-generated performance review will appear here after you click "Generate 
 
           const user = data.user || data;
           cachedUser = user;
+
+          // ✅ show Admin tab if role=admin (safe default: hidden)
+          const role = String(user.role || "user").toLowerCase();
+          setAdminTabVisible(role === "admin");
+
           return user;
         } catch (e) {
           console.error("Error calling /user/init:", e);
@@ -1426,6 +1460,7 @@ Your AI-generated performance review will appear here after you click "Generate 
           subscriptionBadge.classList.add("inactive");
           setStatus("No token found. Please sign in again.", true);
           updateCopyButtonVisibility();
+          setAdminTabVisible(false);
           return;
         }
 
@@ -1450,6 +1485,7 @@ Your AI-generated performance review will appear here after you click "Generate 
 
         if (!user) {
           setNoUserUI();
+          setAdminTabVisible(false);
           return;
         }
 
@@ -1462,6 +1498,7 @@ Your AI-generated performance review will appear here after you click "Generate 
             "Subscription not active. Click the subscription button to go to Stripe and start your plan.",
             true
           );
+          // Admin tab visibility already handled in syncUserFromInit()
           return;
         }
 
@@ -1817,6 +1854,12 @@ Your AI-generated performance review will appear here after you click "Generate 
       // Tabs: layout mapping
       // -----------------------------
       function setActiveTab(target) {
+        // ✅ If admin tab clicked, take them to the admin page
+        if (target === "admin") {
+          window.location.href = "./admin.html";
+          return;
+        }
+
         mobileTabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.target === target));
 
         if (accountCard) accountCard.style.display = "none";
@@ -2000,6 +2043,7 @@ Your AI-generated performance review will appear here after you click "Generate 
         subscriptionBadge.classList.add("inactive");
         setStatus("No token found. Please sign in again.", true);
         updateCopyButtonVisibility();
+        setAdminTabVisible(false);
       } else {
         checkSubscriptionAndLoadApiKey();
       }
