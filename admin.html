@@ -1,1052 +1,1047 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RapidReviewer Admin · Metrics</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>RapidReviewer · Admin Metrics</title>
 
-  <!-- Inter font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-  <!-- Chart.js (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --card: rgba(2, 6, 23, 0.85);
+        --card-border: rgba(148, 163, 184, 0.25);
+        --text-main: #e5e7eb;
+        --text-muted: rgba(148, 163, 184, 0.9);
+        --accent: rgb(99, 102, 241);
+        --shadow-soft: 0 14px 40px rgba(0, 0, 0, 0.45);
 
-  <style>
-    :root{
-      --bg-dark:#050816;
-      --bg-card: rgba(255,255,255,.06);
-      --bg-card-2: rgba(255,255,255,.045);
-      --stroke: rgba(255,255,255,.10);
-      --stroke-2: rgba(255,255,255,.14);
-      --text:#EAF0FF;
-      --muted: rgba(234,240,255,.72);
-      --muted2: rgba(234,240,255,.55);
-      --good:#5DFFB1;
-      --warn:#FFD56A;
-      --bad:#FF6B8B;
-      --accent:#7C5CFF;
-      --accent2:#22D3EE;
-      --shadow: 0 16px 60px rgba(0,0,0,.45);
-      --radius: 18px;
-      --radius2: 22px;
-      --pad: 18px;
-      --max: 1150px;
-    }
+        --good: rgba(34, 197, 94, 0.95);
+        --warn: rgba(245, 158, 11, 0.95);
+        --bad: rgba(239, 68, 68, 0.95);
+      }
 
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(1200px 700px at 20% -10%, rgba(124,92,255,.35), transparent 55%),
-        radial-gradient(900px 650px at 85% 0%, rgba(34,211,238,.22), transparent 60%),
-        radial-gradient(900px 650px at 50% 115%, rgba(124,92,255,.16), transparent 55%),
-        var(--bg-dark);
-    }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
 
-    a{ color: inherit; text-decoration:none; }
-    a:hover{ text-decoration: underline; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text-main);
+        background: radial-gradient(circle at top left, #0b1220, #050913 55%, #020617);
+      }
 
-    .container{
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 22px 18px 60px;
-    }
+      a { color: inherit; }
 
-    /* Header */
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 14px 16px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.03);
-      border-radius: 999px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-    }
+      .app {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding:
+          calc(18px + env(safe-area-inset-top))
+          calc(14px + env(safe-area-inset-right))
+          calc(28px + env(safe-area-inset-bottom))
+          calc(14px + env(safe-area-inset-left));
+      }
 
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width: 220px;
-    }
-    .logo{
-      width:36px;height:36px;
-      border-radius: 12px;
-      display:grid;
-      place-items:center;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 55%),
-        linear-gradient(135deg, rgba(124,92,255,.95), rgba(34,211,238,.60));
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: 0 10px 30px rgba(124,92,255,.25);
-    }
-    .brand h1{
-      font-size: 14px;
-      margin:0;
-      letter-spacing:.2px;
-      font-weight: 700;
-    }
-    .brand .sub{
-      font-size: 12px;
-      color: var(--muted2);
-      margin-top: 2px;
-    }
+      .app-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
 
-    .top-actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap: wrap;
-      justify-content:flex-end;
-    }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-      font-size: 12px;
-    }
+      .brand-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        box-shadow: var(--shadow-soft);
+      }
 
-    .btn{
-      cursor:pointer;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 13px;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.20); }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{
-      border-color: rgba(124,92,255,.5);
-      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
-      box-shadow: 0 14px 40px rgba(124,92,255,.22);
-    }
-    .btn.primary:hover{
-      background: linear-gradient(135deg, rgba(124,92,255,1), rgba(124,92,255,.62));
-    }
-    .btn.ghost{
-      background: transparent;
-    }
+      .brand-text-main {
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.01em;
+      }
 
-    /* Layout */
-    .page-title{
-      margin: 26px 4px 14px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-    .page-title h2{
-      margin:0;
-      font-size: 26px;
-      letter-spacing:-.4px;
-    }
-    .page-title p{
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-      max-width: 680px;
-      line-height: 1.45;
-    }
+      .brand-text-sub {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
 
-    .grid{
-      display:grid;
-      gap: 14px;
-    }
-    .grid.kpis{ grid-template-columns: repeat(12, 1fr); }
-    .grid.main{ grid-template-columns: repeat(12, 1fr); margin-top: 14px; }
+      .app-pill {
+        font-size: 12px;
+        color: var(--text-muted);
+        padding: 8px 10px;
+        border: 1px solid var(--card-border);
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
 
-    .card{
-      border: 1px solid var(--stroke);
-      background: var(--bg-card);
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-      overflow:hidden;
-    }
-    .card .inner{ padding: var(--pad); }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: 14px 14px 12px;
+        box-shadow: var(--shadow-soft);
+      }
 
-    .kpi{
-      grid-column: span 3;
-      min-height: 108px;
-      position: relative;
-    }
-    .kpi::before{
-      content:"";
-      position:absolute;
-      inset:-1px -1px auto -1px;
-      height: 54px;
-      background: linear-gradient(90deg, rgba(124,92,255,.24), rgba(34,211,238,.16), transparent);
-      opacity:.9;
-      pointer-events:none;
-    }
-    .kpi .label{
-      position: relative;
-      font-size: 12px;
-      color: var(--muted2);
-      margin:0 0 8px;
-    }
-    .kpi .value{
-      position: relative;
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing:-.6px;
-      margin:0;
-    }
-    .kpi .delta{
-      position: relative;
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--muted);
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .dot{
-      width: 8px; height: 8px; border-radius: 99px;
-      background: rgba(255,255,255,.35);
-      border:1px solid rgba(255,255,255,.22);
-    }
-    .dot.good{ background: rgba(93,255,177,.75); border-color: rgba(93,255,177,.38); }
-    .dot.warn{ background: rgba(255,213,106,.8); border-color: rgba(255,213,106,.40); }
-    .dot.bad{ background: rgba(255,107,139,.8); border-color: rgba(255,107,139,.40); }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
 
-    .span-8{ grid-column: span 8; }
-    .span-4{ grid-column: span 4; }
-    .span-12{ grid-column: span 12; }
+      .card-title {
+        font-size: 15px;
+        font-weight: 650;
+        margin-bottom: 2px;
+      }
 
-    .card-title{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 12px;
-    }
-    .card-title h3{
-      margin:0;
-      font-size: 14px;
-      letter-spacing:.1px;
-    }
-    .card-title .hint{
-      font-size: 12px;
-      color: var(--muted2);
-    }
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.35;
+      }
 
-    /* Filters */
-    .filters{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top: 14px;
-    }
-    .input, select{
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.03);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
-      outline: none;
-      font-size: 13px;
-      min-width: 180px;
-    }
-    .input::placeholder{ color: rgba(234,240,255,.45); }
-    select{ min-width: 200px; }
+      .btn {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.75);
+        color: var(--text-main);
+        border-radius: 12px;
+        padding: 9px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: transform 0.05s ease;
+        user-select: none;
+      }
+      .btn:active { transform: translateY(1px); }
 
-    /* Table */
-    .table-wrap{
-      overflow:auto;
-      border-top: 1px solid var(--stroke);
-      background: var(--bg-card-2);
-    }
-    table{
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 980px;
-    }
-    th, td{
-      text-align: left;
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      font-size: 13px;
-      color: rgba(234,240,255,.92);
-      white-space: nowrap;
-    }
-    th{
-      font-size: 12px;
-      color: var(--muted2);
-      letter-spacing:.2px;
-      font-weight: 700;
-      background: rgba(255,255,255,.02);
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .tag{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .tag.good{ border-color: rgba(93,255,177,.30); }
-    .tag.warn{ border-color: rgba(255,213,106,.30); }
-    .tag.bad{ border-color: rgba(255,107,139,.30); }
+      .btn-primary {
+        border-color: rgba(99, 102, 241, 0.65);
+        background: rgba(99, 102, 241, 0.18);
+      }
 
-    /* Toggle pills (for team vs work type) */
-    .seg{
-      display:inline-flex;
-      gap:8px;
-      padding: 4px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.03);
-    }
-    .seg button{
-      border: 1px solid transparent;
-      background: transparent;
-      color: rgba(234,240,255,.70);
-      padding: 7px 10px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 12px;
-      cursor:pointer;
-    }
-    .seg button.active{
-      background: rgba(255,255,255,.08);
-      border-color: rgba(255,255,255,.14);
-      color: rgba(234,240,255,.92);
-    }
+      .btn-ghost {
+        background: transparent;
+        border-color: rgba(148, 163, 184, 0.28);
+        color: var(--text-muted);
+      }
 
-    /* Login panel */
-    .overlay{
-      position: fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(10px);
-      z-index: 50;
-    }
-    .overlay.show{ display:flex; }
-    .login{
-      width: min(520px, 100%);
-      border: 1px solid var(--stroke-2);
-      background: rgba(10, 14, 35, .88);
-      border-radius: 22px;
-      box-shadow: 0 28px 120px rgba(0,0,0,.65);
-      overflow:hidden;
-    }
-    .login .head{
-      padding: 18px 18px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(34,211,238,.10));
-    }
-    .login h3{ margin:0; font-size: 16px; }
-    .login p{ margin:8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-    .login .body{ padding: 16px 18px 18px; }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .row > *{ flex: 1; min-width: 200px; }
-    .help{
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--muted2);
-    }
-    .error{
-      margin-top: 10px;
-      font-size: 12px;
-      color: rgba(255,107,139,.95);
-      display:none;
-    }
+      .btn-small {
+        padding: 7px 10px;
+        font-size: 11px;
+        border-radius: 10px;
+      }
 
-    /* Footer note */
-    .note{
-      margin-top: 16px;
-      color: var(--muted2);
-      font-size: 12px;
-      line-height: 1.5;
-    }
+      .section-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        margin-bottom: 6px;
+      }
 
-    @media (max-width: 980px){
-      .kpi{ grid-column: span 6; }
-      .span-8{ grid-column: span 12; }
-      .span-4{ grid-column: span 12; }
-    }
-  </style>
-</head>
+      .input, select {
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.95);
+        color: var(--text-main);
+        padding: 9px 10px;
+        font-size: 12px;
+        outline: none;
+        min-width: 160px;
+      }
+      .input:focus, select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.6);
+      }
+      .input::placeholder { color: rgba(148, 163, 184, 0.8); }
 
-<body>
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="logo" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M13.5 3c-3.9 1.4-7.1 4.7-8.4 8.7-.3.9-.4 1.8-.4 2.8v.5l3.2-1.1 3.6 3.6L10.4 21h.5c1 0 1.9-.1 2.8-.4 4-1.3 7.3-4.5 8.7-8.4.7-2.1.7-4.4 0-6.5-2.1-.7-4.4-.7-6.5 0Z" stroke="rgba(255,255,255,.9)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.6 14.4l-4.9 1.7M14.4 9.6l1.7-4.9" stroke="rgba(255,255,255,.65)" stroke-width="1.3" stroke-linecap="round"/>
-            <circle cx="15.4" cy="8.6" r="1.6" stroke="rgba(255,255,255,.85)" stroke-width="1.3"/>
-          </svg>
-        </div>
-        <div>
-          <h1>RapidReviewer Admin</h1>
-          <div class="sub" id="companySub">Not signed in</div>
-        </div>
-      </div>
+      /* ---- Admin layout ---- */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
 
-      <div class="top-actions">
-        <span class="pill" id="periodPill">Period: last 14 days</span>
-        <a class="btn ghost" href="./index.html">← Back to site</a>
-        <button class="btn" id="btnSignIn">Sign in</button>
-        <button class="btn" id="btnSignOut" style="display:none;">Sign out</button>
-      </div>
-    </div>
+      .toolbar-left {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
 
-    <div class="page-title">
-      <div>
-        <h2>Company metrics</h2>
-        <p>
-          Dummy data dashboard showing engineering activity and adoption. “Engineers actively merging PRs” is defined as
-          having ≥1 merged PR within the selected period.
-        </p>
-      </div>
+      .toolbar-right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+      }
 
-      <div class="filters">
-        <select id="periodSelect" title="Period">
-          <option value="7">Last 7 days</option>
-          <option value="14" selected>Last 14 days</option>
-          <option value="30">Last 30 days</option>
-        </select>
+      .admin-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 900px) {
+        .admin-grid { grid-template-columns: 1fr; }
+        .app-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .app-pill { width: 100%; white-space: normal; }
+      }
 
-        <select id="teamSelect" title="Team">
-          <option value="all" selected>All teams</option>
-        </select>
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 900px) {
+        .kpi-grid { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 560px) {
+        .kpi-grid { grid-template-columns: 1fr; }
+      }
 
-        <input class="input" id="searchInput" placeholder="Search user (name/email)..." />
-        <button class="btn" id="btnRefresh">Refresh dummy data</button>
-        <button class="btn primary" id="btnExport">Export CSV</button>
-      </div>
-    </div>
+      .kpi {
+        padding: 14px 14px 12px;
+        position: relative;
+        overflow: hidden;
+      }
+      .kpi::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 48%);
+        pointer-events: none;
+      }
+      .kpi-label {
+        position: relative;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0 0 8px;
+      }
+      .kpi-value {
+        position: relative;
+        font-size: 24px;
+        font-weight: 750;
+        letter-spacing: 0.01em;
+        margin: 0;
+      }
+      .kpi-sub {
+        position: relative;
+        margin-top: 10px;
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1.35;
+      }
 
-    <!-- KPI cards -->
-    <div class="grid kpis" id="kpiGrid">
-      <div class="card kpi">
-        <div class="inner">
-          <p class="label">Engineers actively merging PRs</p>
-          <p class="value" id="kpiActiveMergers">—</p>
-          <div class="delta"><span class="dot good"></span><span id="kpiActiveMergersDelta">—</span></div>
-        </div>
-      </div>
+      .seg {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.55);
+      }
+      .seg button {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text-muted);
+        padding: 7px 10px;
+        border-radius: 999px;
+        font-weight: 650;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .seg button.active {
+        color: var(--text-main);
+        border-color: rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.8);
+      }
 
-      <div class="card kpi">
-        <div class="inner">
-          <p class="label">Merged PRs</p>
-          <p class="value" id="kpiMergedPRs">—</p>
-          <div class="delta"><span class="dot"></span><span id="kpiMergedPRsDelta">—</span></div>
-        </div>
-      </div>
+      /* Charts */
+      .chart-wrap {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(148, 163, 184, 0.18);
+      }
 
-      <div class="card kpi">
-        <div class="inner">
-          <p class="label">Engineers (seats provisioned)</p>
-          <p class="value" id="kpiSeats">—</p>
-          <div class="delta"><span class="dot"></span><span id="kpiSeatsDelta">—</span></div>
-        </div>
-      </div>
+      /* Table */
+      .table-wrap {
+        overflow: auto;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.55);
+      }
 
-      <div class="card kpi">
-        <div class="inner">
-          <p class="label">Tagged merged PRs</p>
-          <p class="value" id="kpiTaggedMerged">—</p>
-          <div class="delta"><span class="dot good"></span><span id="kpiTaggedMergedDelta">—</span></div>
-        </div>
-      </div>
-    </div>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 860px;
+      }
 
-    <!-- Charts + Breakdown -->
-    <div class="grid main">
-      <div class="card span-8">
-        <div class="inner">
-          <div class="card-title">
-            <h3>Activity over time</h3>
-            <div class="hint" id="chartHint">Merged PRs + active engineers</div>
-          </div>
-          <canvas id="chartActivity" height="120"></canvas>
-          <div class="note">
-            “Active engineers” = unique engineers with ≥1 merged PR on that day.
+      th, td {
+        text-align: left;
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      th {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background: rgba(15, 23, 42, 0.7);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .status-badge {
+        font-size: 11px;
+        border-radius: 999px;
+        padding: 7px 10px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .status-badge.active { border-color: rgba(34, 197, 94, 0.45); color: rgba(34, 197, 94, 0.95); }
+      .status-badge.inactive { border-color: rgba(239, 68, 68, 0.45); color: rgba(239, 68, 68, 0.95); }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.8);
+      }
+      .dot.good { background: var(--good); }
+      .dot.bad { background: var(--bad); }
+
+      .muted { color: var(--text-muted); }
+
+      .error-banner {
+        display: none;
+        margin-bottom: 12px;
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.08);
+        color: rgba(239, 68, 68, 0.95);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .success-banner {
+        display: none;
+        margin-bottom: 12px;
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        background: rgba(34, 197, 94, 0.08);
+        color: rgba(34, 197, 94, 0.95);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      @media (max-width: 600px) {
+        .app {
+          padding:
+            calc(16px + env(safe-area-inset-top))
+            calc(10px + env(safe-area-inset-right))
+            calc(24px + env(safe-area-inset-bottom))
+            calc(10px + env(safe-area-inset-left));
+        }
+        .brand-logo { width: 30px; height: 30px; }
+        .brand-text-main { font-size: 13px; }
+        .brand-text-sub { font-size: 11px; }
+        .card { border-radius: 16px; padding: 12px 10px 10px; }
+        .btn { padding: 7px 10px; font-size: 11px; }
+        .btn-small { padding: 6px 8px; font-size: 10px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <img src="rapid-rocket-logo.png" alt="RapidReviewer logo" class="brand-logo" />
+          <div>
+            <div class="brand-text-main">RapidReviewer.io</div>
+            <div class="brand-text-sub">Admin metrics · Company dashboard</div>
           </div>
         </div>
-      </div>
 
-      <div class="card span-4">
-        <div class="inner">
-          <div class="card-title">
-            <h3 id="breakdownTitle">Team breakdown</h3>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div class="seg" role="tablist" aria-label="Breakdown toggle">
-                <button id="btnBreakdownTeam" class="active" role="tab" aria-selected="true">Team</button>
-                <button id="btnBreakdownType" role="tab" aria-selected="false">Work type</button>
-              </div>
+        <div class="app-pill" id="header-pill">Checking auth…</div>
+      </header>
+
+      <div class="error-banner" id="error-banner"></div>
+      <div class="success-banner" id="success-banner"></div>
+
+      <section class="card" style="margin-bottom: 14px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Metrics overview</div>
+            <div class="card-subtitle">
+              “Engineers actively merging PRs” = engineers with ≥1 merged PR in the selected period.
             </div>
           </div>
-          <div class="hint" id="breakdownHint" style="margin-top:-6px; margin-bottom:10px;">Share of merged PRs</div>
-          <canvas id="chartBreakdown" height="210"></canvas>
-          <div class="note" id="breakdownNote">
-            In the real version, this should be backed by your org/team mapping (GitHub teams or internal directory).
+          <div style="display:flex; gap:8px; align-items:center;">
+            <a href="./index.html" class="btn btn-ghost btn-small">← Back</a>
+            <button id="sign-in-btn" class="btn btn-primary btn-small" style="display:none;">Sign in</button>
+            <button id="sign-out-btn" class="btn btn-ghost btn-small" style="display:none;">Sign out</button>
           </div>
         </div>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <label class="section-label" style="margin:0;">Period</label>
+            <select id="period-select">
+              <option value="7">Last 7 days</option>
+              <option value="14" selected>Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+
+            <label class="section-label" style="margin:0 0 0 6px;">Team</label>
+            <select id="team-select">
+              <option value="all" selected>All teams</option>
+            </select>
+
+            <input id="search-input" class="input" placeholder="Search user (name/email)..." />
+          </div>
+
+          <div class="toolbar-right">
+            <button id="refresh-btn" class="btn btn-ghost">Refresh</button>
+            <button id="export-btn" class="btn btn-primary">Export CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpi-grid">
+        <section class="card kpi">
+          <div class="kpi-label">Engineers actively merging PRs</div>
+          <h3 class="kpi-value" id="kpi-active">—</h3>
+          <div class="kpi-sub" id="kpi-active-sub">—</div>
+        </section>
+
+        <section class="card kpi">
+          <div class="kpi-label">Merged PRs</div>
+          <h3 class="kpi-value" id="kpi-merged">—</h3>
+          <div class="kpi-sub" id="kpi-merged-sub">—</div>
+        </section>
+
+        <section class="card kpi">
+          <div class="kpi-label">Engineers (seats provisioned)</div>
+          <h3 class="kpi-value" id="kpi-seats">—</h3>
+          <div class="kpi-sub" id="kpi-seats-sub">—</div>
+        </section>
+
+        <section class="card kpi">
+          <div class="kpi-label">Tagged merged PRs</div>
+          <h3 class="kpi-value" id="kpi-tagged">—</h3>
+          <div class="kpi-sub" id="kpi-tagged-sub">—</div>
+        </section>
       </div>
 
-      <!-- Table -->
-      <div class="card span-12">
-        <div class="inner">
-          <div class="card-title">
-            <h3>Users</h3>
-            <div class="hint" id="usersHint">Showing —</div>
+      <!-- Charts -->
+      <div class="admin-grid" style="margin-bottom: 14px;">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Activity over time</div>
+              <div class="card-subtitle">Merged PRs and daily active engineers.</div>
+            </div>
+            <span class="app-pill" id="range-pill">—</span>
           </div>
+
+          <div class="chart-wrap">
+            <canvas id="activity-chart" height="120"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title" id="breakdown-title">Team breakdown</div>
+              <div class="card-subtitle" id="breakdown-subtitle">Share of merged PRs.</div>
+            </div>
+
+            <div class="seg" aria-label="Breakdown toggle">
+              <button id="breakdown-team" class="active" type="button">Team</button>
+              <button id="breakdown-type" type="button">Work type</button>
+            </div>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="breakdown-chart" height="170"></canvas>
+          </div>
+
+          <div class="card-subtitle" id="breakdown-note" style="margin-top:10px;">
+            Teams come from your directory mapping (or stored user team field).
+          </div>
+        </section>
+      </div>
+
+      <!-- Users table -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Users</div>
+            <div class="card-subtitle">Merged PR activity by engineer for the selected period.</div>
+          </div>
+          <span class="app-pill" id="users-pill">Showing —</span>
         </div>
+
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>User</th>
                 <th>Team</th>
-                <th>Merged PRs (period)</th>
-                <th>Top work type (period)</th>
+                <th>Merged PRs</th>
+                <th>Top work type</th>
                 <th>Last activity</th>
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody id="usersTbody"></tbody>
+            <tbody id="users-tbody"></tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
 
-    <div class="note" style="margin-top:18px;">
-      <strong>Wiring to your API later:</strong> replace <code>getDummyMetrics()</code> with a <code>fetch()</code> call to your Lambda/API Gateway,
-      pass a bearer token (Cognito), and return the same JSON shape. Keep this UI layer unchanged.
-    </div>
-  </div>
+    <script>
+      // -----------------------------
+      // CONFIG (matches your existing index.html patterns)
+      // -----------------------------
+      const apiBase = "https://api.rapidreviewer.io";
+      const adminMetricsPath = "/admin/metrics";
 
-  <!-- Login overlay (demo) -->
-  <div class="overlay" id="overlay">
-    <div class="login">
-      <div class="head">
-        <h3>Company sign in</h3>
-        <p>
-          Demo-only login so you can share this page and iterate on the UI. For production,
-          use Cognito + JWT and enforce auth server-side.
-        </p>
-      </div>
-      <div class="body">
-        <div class="row">
-          <input class="input" id="loginCompany" placeholder="Company (e.g. Acme Ltd)" />
-          <input class="input" id="loginEmail" placeholder="Admin email" />
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <input class="input" id="loginPassword" placeholder="Password (demo: admin)" type="password" />
-          <button class="btn primary" id="btnDoLogin">Sign in</button>
-        </div>
-        <div class="help">Demo password: <code>admin</code></div>
-        <div class="error" id="loginError">Invalid password</div>
-      </div>
-    </div>
-  </div>
+      // Your Hosted UI config (optional convenience for sign-in button)
+      const cognitoDomain = "auth.rapidreviewer.io";
+      const clientId = "3llork2t46v9n0u21n35sgknh4";
+      const redirectUri = "https://matthewboyd.github.io/post-auth.html";
+      const loginUrl =
+        `https://${cognitoDomain}/oauth2/authorize` +
+        `?client_id=${encodeURIComponent(clientId)}` +
+        `&response_type=token` +
+        `&scope=${encodeURIComponent("openid email profile")}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-  <script>
-    // -----------------------------
-    // Demo session (client-side only)
-    // -----------------------------
-    const SESSION_KEY = "rr_admin_session_v1";
+      // Token key matches your index.html usage
+      const TOKEN_KEY = "idToken";
 
-    function getSession(){
-      try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
-    }
-    function setSession(session){
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
-    function clearSession(){
-      localStorage.removeItem(SESSION_KEY);
-    }
+      // -----------------------------
+      // DOM refs
+      // -----------------------------
+      const headerPill = document.getElementById("header-pill");
+      const errorBanner = document.getElementById("error-banner");
+      const successBanner = document.getElementById("success-banner");
 
-    const els = {
-      overlay: document.getElementById("overlay"),
-      btnSignIn: document.getElementById("btnSignIn"),
-      btnSignOut: document.getElementById("btnSignOut"),
-      btnDoLogin: document.getElementById("btnDoLogin"),
-      loginCompany: document.getElementById("loginCompany"),
-      loginEmail: document.getElementById("loginEmail"),
-      loginPassword: document.getElementById("loginPassword"),
-      loginError: document.getElementById("loginError"),
-      companySub: document.getElementById("companySub"),
+      const signInBtn = document.getElementById("sign-in-btn");
+      const signOutBtn = document.getElementById("sign-out-btn");
 
-      periodSelect: document.getElementById("periodSelect"),
-      teamSelect: document.getElementById("teamSelect"),
-      searchInput: document.getElementById("searchInput"),
-      btnRefresh: document.getElementById("btnRefresh"),
-      btnExport: document.getElementById("btnExport"),
+      const periodSelect = document.getElementById("period-select");
+      const teamSelect = document.getElementById("team-select");
+      const searchInput = document.getElementById("search-input");
+      const refreshBtn = document.getElementById("refresh-btn");
+      const exportBtn = document.getElementById("export-btn");
 
-      periodPill: document.getElementById("periodPill"),
-      kpiActiveMergers: document.getElementById("kpiActiveMergers"),
-      kpiActiveMergersDelta: document.getElementById("kpiActiveMergersDelta"),
-      kpiMergedPRs: document.getElementById("kpiMergedPRs"),
-      kpiMergedPRsDelta: document.getElementById("kpiMergedPRsDelta"),
-      kpiSeats: document.getElementById("kpiSeats"),
-      kpiSeatsDelta: document.getElementById("kpiSeatsDelta"),
-      kpiTaggedMerged: document.getElementById("kpiTaggedMerged"),
-      kpiTaggedMergedDelta: document.getElementById("kpiTaggedMergedDelta"),
+      const rangePill = document.getElementById("range-pill");
+      const usersPill = document.getElementById("users-pill");
 
-      usersHint: document.getElementById("usersHint"),
-      usersTbody: document.getElementById("usersTbody"),
+      const kpiActive = document.getElementById("kpi-active");
+      const kpiActiveSub = document.getElementById("kpi-active-sub");
+      const kpiMerged = document.getElementById("kpi-merged");
+      const kpiMergedSub = document.getElementById("kpi-merged-sub");
+      const kpiSeats = document.getElementById("kpi-seats");
+      const kpiSeatsSub = document.getElementById("kpi-seats-sub");
+      const kpiTagged = document.getElementById("kpi-tagged");
+      const kpiTaggedSub = document.getElementById("kpi-tagged-sub");
 
-      chartHint: document.getElementById("chartHint"),
-      chartActivity: document.getElementById("chartActivity"),
-      breakdownTitle: document.getElementById("breakdownTitle"),
-      breakdownHint: document.getElementById("breakdownHint"),
-      breakdownNote: document.getElementById("breakdownNote"),
-      chartBreakdown: document.getElementById("chartBreakdown"),
+      const breakdownTitle = document.getElementById("breakdown-title");
+      const breakdownSubtitle = document.getElementById("breakdown-subtitle");
+      const breakdownNote = document.getElementById("breakdown-note");
+      const breakdownTeamBtn = document.getElementById("breakdown-team");
+      const breakdownTypeBtn = document.getElementById("breakdown-type");
 
-      btnBreakdownTeam: document.getElementById("btnBreakdownTeam"),
-      btnBreakdownType: document.getElementById("btnBreakdownType"),
-    };
+      const usersTbody = document.getElementById("users-tbody");
 
-    let breakdownMode = "team"; // "team" | "type"
-
-    function openLogin(){
-      els.loginError.style.display = "none";
-      els.overlay.classList.add("show");
-      els.loginCompany.value = "Acme Ltd";
-      els.loginEmail.value = "admin@acme.dev";
-      els.loginPassword.value = "";
-      setTimeout(() => els.loginPassword.focus(), 80);
-    }
-    function closeLogin(){ els.overlay.classList.remove("show"); }
-
-    els.btnSignIn.addEventListener("click", openLogin);
-    els.overlay.addEventListener("click", (e) => { if(e.target === els.overlay) closeLogin(); });
-    els.btnSignOut.addEventListener("click", () => {
-      clearSession();
-      applySessionToUI();
-      renderAll();
-    });
-
-    els.btnDoLogin.addEventListener("click", () => {
-      const pwd = els.loginPassword.value.trim();
-      if (pwd !== "admin"){
-        els.loginError.style.display = "block";
-        return;
-      }
-      const session = {
-        company: (els.loginCompany.value || "Acme Ltd").trim(),
-        email: (els.loginEmail.value || "admin@acme.dev").trim(),
-        ts: Date.now()
-      };
-      setSession(session);
-      closeLogin();
-      applySessionToUI();
-      renderAll();
-    });
-
-    function applySessionToUI(){
-      const s = getSession();
-      const signedIn = !!s;
-      els.btnSignIn.style.display = signedIn ? "none" : "inline-flex";
-      els.btnSignOut.style.display = signedIn ? "inline-flex" : "none";
-      els.companySub.textContent = signedIn ? `${s.company} · ${s.email}` : "Not signed in";
-    }
-
-    // -----------------------------
-    // Dummy data generator
-    // -----------------------------
-    function seededRand(seed){
-      let x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    }
-
-    function daysAgoISO(days){
-      const d = new Date();
-      d.setDate(d.getDate() - days);
-      return d.toISOString().slice(0,10);
-    }
-
-    function formatDateTime(ts){
-      const d = new Date(ts);
-      const date = d.toISOString().slice(0,10);
-      const time = d.toISOString().slice(11,16);
-      return `${date} ${time}Z`;
-    }
-
-    function pickWeighted(labels, weights, r){
-      const total = weights.reduce((a,b)=>a+b,0);
-      let acc = 0;
-      for (let i=0;i<labels.length;i++){
-        acc += weights[i] / total;
-        if (r <= acc) return labels[i];
-      }
-      return labels[labels.length-1];
-    }
-
-    function getDummyMetrics({company, periodDays}){
-      const seedBase = (company || "Acme Ltd").length * 1337 + periodDays * 17;
-
-      const teams = ["Platform", "Mobile", "Web", "Data", "Infra"];
-      const workTypes = ["Feature", "Bug fix", "Refactor", "Chore", "Docs"];
-
-      // Totals
-      const teamMerged = Object.fromEntries(teams.map(t => [t, 0]));
-      const typeMerged = Object.fromEntries(workTypes.map(t => [t, 0]));
-      let taggedMergedTotal = 0;
-
-      const users = Array.from({length: 18}, (_, i) => {
-        const team = teams[i % teams.length];
-        const s = seedBase + i * 101;
-
-        const merged = Math.floor(seededRand(s) * 14); // 0..13
-        const lastActivity = Date.now() - Math.floor(seededRand(s+5) * periodDays * 24 * 3600 * 1000);
-
-        // Tag distribution for merged PRs
-        // Some PRs can be "untagged" (to make tagged coverage meaningful)
-        const untagged = merged === 0 ? 0 : Math.floor(seededRand(s+6) * Math.min(3, merged + 1)); // 0..2 (ish)
-        const tagged = Math.max(0, merged - untagged);
-
-        const typeCounts = Object.fromEntries(workTypes.map(t => [t, 0]));
-
-        for (let k=0;k<tagged;k++){
-          // Slightly biased towards Feature/Bug fix
-          const t = pickWeighted(workTypes, [3.6, 2.8, 1.8, 1.3, 0.9], seededRand(s + 200 + k));
-          typeCounts[t] += 1;
-        }
-
-        // roll up totals
-        teamMerged[team] += merged;
-        for (const wt of workTypes) typeMerged[wt] += typeCounts[wt];
-        taggedMergedTotal += tagged;
-
-        const active = merged >= 1;
-        const status = active ? "Active" : "Inactive";
-
-        const topType = (() => {
-          let best = "—", bestV = 0;
-          for (const wt of workTypes){
-            if (typeCounts[wt] > bestV){ bestV = typeCounts[wt]; best = wt; }
-          }
-          if (merged === 0) return "—";
-          if (bestV === 0) return "Untagged";
-          return best;
-        })();
-
-        return {
-          id: `u_${i+1}`,
-          name: ["Alex","Sam","Taylor","Jordan","Casey","Morgan","Jamie","Avery","Riley","Cameron","Drew","Robin","Quinn","Skyler","Reese","Hayden","Parker","Emerson"][i] + " " +
-                ["W.","B.","K.","L.","S.","M.","J.","T.","R.","C.","D.","H.","P.","G.","N.","F.","E.","O."][i],
-          email: `engineer${i+1}@${(company || "acme").toLowerCase().replace(/\s+/g,'')}.dev`,
-          team,
-          mergedPRs: merged,
-          typeCounts,
-          topType,
-          taggedMerged: tagged,
-          lastActivity,
-          status,
-        };
-      });
-
-      // time series by day
-      const series = Array.from({length: periodDays}, (_, idx) => {
-        const dayIndex = periodDays - 1 - idx;
-        const date = daysAgoISO(dayIndex);
-        const s = seedBase + idx * 29;
-        const mergedPRs = Math.max(0, Math.floor(seededRand(s) * 18));
-        const activeEngineers = Math.max(0, Math.floor(1 + seededRand(s+1) * 12));
-        return { date, mergedPRs, activeEngineers };
-      });
-
-      return {
-        company: company || "Acme Ltd",
-        periodDays,
-        teams,
-        workTypes,
-        users,
-        series,
-        teamMerged,
-        typeMerged,
-        taggedMergedTotal
-      };
-    }
-
-    // -----------------------------
-    // Rendering / state
-    // -----------------------------
-    let state = {
-      dataset: null,
-      charts: { activity: null, breakdown: null }
-    };
-
-    function getFilters(){
-      return {
-        periodDays: parseInt(els.periodSelect.value, 10),
-        team: els.teamSelect.value,
-        q: (els.searchInput.value || "").trim().toLowerCase()
-      };
-    }
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function setTeamOptions(ds){
-      const current = els.teamSelect.value;
-      els.teamSelect.innerHTML = `<option value="all">All teams</option>` + ds.teams.map(t => `<option value="${t}">${t}</option>`).join("");
-      if ([...els.teamSelect.options].some(o => o.value === current)) els.teamSelect.value = current;
-    }
-
-    function getBaseUsers(ds, team){
-      if (team === "all") return ds.users.slice();
-      return ds.users.filter(u => u.team === team);
-    }
-
-    function getDisplayUsers(baseUsers, q){
-      if (!q) return baseUsers;
-      return baseUsers.filter(u => (u.name + " " + u.email).toLowerCase().includes(q));
-    }
-
-    function computeKPIs(ds, team){
-      const baseUsers = getBaseUsers(ds, team);
-      const seats = baseUsers.length;
-
-      const mergedTotal = baseUsers.reduce((a,u)=>a+u.mergedPRs, 0);
-      const activeMergers = baseUsers.filter(u => u.mergedPRs >= 1).length;
-      const activePct = seats > 0 ? (activeMergers / seats) * 100 : 0;
-
-      const taggedMerged = baseUsers.reduce((a,u)=>a+u.taggedMerged, 0);
-      const taggedPct = mergedTotal > 0 ? (taggedMerged / mergedTotal) * 100 : 0;
-
-      return { seats, mergedTotal, activeMergers, activePct, taggedMerged, taggedPct };
-    }
-
-    function renderKPIs(kpis, periodDays){
-      // Primary KPI value shows count + %
-      els.kpiActiveMergers.textContent = `${kpis.activeMergers} (${kpis.activePct.toFixed(0)}%)`;
-      els.kpiMergedPRs.textContent = kpis.mergedTotal.toString();
-      els.kpiSeats.textContent = kpis.seats.toString();
-      els.kpiTaggedMerged.textContent = `${kpis.taggedMerged} (${kpis.taggedPct.toFixed(0)}%)`;
-
-      // Dummy deltas (compare vs previous period)
-      const bump = (x) => Math.round(x * (0.84 + Math.random()*0.34));
-      const prevActive = bump(kpis.activeMergers);
-      const prevMerged = bump(kpis.mergedTotal);
-      const prevSeats  = kpis.seats; // seats usually stable
-      const prevTagged = bump(kpis.taggedMerged);
-
-      const fmtDelta = (curr, prev) => {
-        const diff = curr - prev;
-        const pct = prev > 0 ? (diff / prev) * 100 : 0;
-        const sign = diff >= 0 ? "+" : "";
-        return `vs previous ${periodDays}d: ${sign}${diff} (${sign}${pct.toFixed(0)}%)`;
-      };
-
-      els.kpiActiveMergersDelta.textContent = `Active of ${kpis.seats} engineers · ${fmtDelta(kpis.activeMergers, prevActive)}`;
-      els.kpiMergedPRsDelta.textContent = fmtDelta(kpis.mergedTotal, prevMerged);
-      els.kpiSeatsDelta.textContent = `Provisioned seats (engineers)`;
-      els.kpiTaggedMergedDelta.textContent = `Coverage of merged PR tags · ${fmtDelta(kpis.taggedMerged, prevTagged)}`;
-    }
-
-    function statusTag(status){
-      if (status === "Active") return `<span class="tag good"><span class="dot good"></span>${status}</span>`;
-      return `<span class="tag bad"><span class="dot bad"></span>${status}</span>`;
-    }
-
-    function renderTable(users){
-      els.usersHint.textContent = `Showing ${users.length} user(s)`;
-      els.usersTbody.innerHTML = users.map(u => `
-        <tr>
-          <td>
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <span style="font-weight:700;">${escapeHtml(u.name)}</span>
-              <span style="font-size:12px;color:rgba(234,240,255,.62)">${escapeHtml(u.email)}</span>
-            </div>
-          </td>
-          <td>${escapeHtml(u.team)}</td>
-          <td>${u.mergedPRs}</td>
-          <td>${escapeHtml(u.topType)}</td>
-          <td>${formatDateTime(u.lastActivity)}</td>
-          <td>${statusTag(u.status)}</td>
-        </tr>
-      `).join("");
-    }
-
-    function renderCharts(ds){
-      // Activity line chart
-      const labels = ds.series.map(x => x.date);
-      const merged = ds.series.map(x => x.mergedPRs);
-      const active = ds.series.map(x => x.activeEngineers);
-
-      if (state.charts.activity) state.charts.activity.destroy();
-      state.charts.activity = new Chart(els.chartActivity, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            { label: "Merged PRs", data: merged, tension: 0.35 },
-            { label: "Active engineers", data: active, tension: 0.35 }
-          ]
+      // -----------------------------
+      // State
+      // -----------------------------
+      let state = {
+        dataset: null,
+        charts: {
+          activity: null,
+          breakdown: null,
         },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { labels: { color: "rgba(234,240,255,.75)" } },
-            tooltip: { mode: "index", intersect: false }
+        breakdownMode: "team", // "team" | "type"
+      };
+
+      // -----------------------------
+      // UI helpers
+      // -----------------------------
+      function setError(msg) {
+        if (!msg) {
+          errorBanner.style.display = "none";
+          errorBanner.textContent = "";
+          return;
+        }
+        errorBanner.style.display = "block";
+        errorBanner.textContent = msg;
+      }
+
+      function setSuccess(msg) {
+        if (!msg) {
+          successBanner.style.display = "none";
+          successBanner.textContent = "";
+          return;
+        }
+        successBanner.style.display = "block";
+        successBanner.textContent = msg;
+        setTimeout(() => setSuccess(""), 1600);
+      }
+
+      function fmtPct(n) {
+        if (!isFinite(n)) return "0%";
+        return `${Math.round(n)}%`;
+      }
+
+      function fmtIso(iso) {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        return d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function statusBadge(status) {
+        const isActive = String(status).toLowerCase() === "active";
+        const cls = isActive ? "active" : "inactive";
+        const dotCls = isActive ? "good" : "bad";
+        const label = isActive ? "Active" : "Inactive";
+        return `<span class="status-badge ${cls}"><span class="dot ${dotCls}"></span>${label}</span>`;
+      }
+
+      // -----------------------------
+      // Auth
+      // -----------------------------
+      function getToken() {
+        return window.localStorage.getItem(TOKEN_KEY);
+      }
+
+      function signIn() {
+        window.location.href = loginUrl;
+      }
+
+      function signOut() {
+        window.localStorage.removeItem(TOKEN_KEY);
+        headerPill.textContent = "Signed out";
+        signInBtn.style.display = "inline-block";
+        signOutBtn.style.display = "none";
+        setError("You are signed out. Please sign in to view admin metrics.");
+        clearUI();
+      }
+
+      // -----------------------------
+      // API
+      // -----------------------------
+      async function apiFetch(path, { method = "GET", token } = {}) {
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`${apiBase}${path}`, { method, headers });
+        const txt = await res.text();
+        let data = {};
+        try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
+        return { res, data };
+      }
+
+      async function fetchAdminMetrics({ periodDays, team }) {
+        const token = getToken();
+        if (!token) throw new Error("missing_token");
+
+        const url = `${adminMetricsPath}?periodDays=${encodeURIComponent(periodDays)}&team=${encodeURIComponent(team)}`;
+        const { res, data } = await apiFetch(url, { method: "GET", token });
+
+        if (!res.ok) {
+          const msg =
+            data?.message ||
+            data?.error ||
+            (typeof data === "string" ? data : "") ||
+            `HTTP ${res.status}`;
+          const err = new Error(msg);
+          err.status = res.status;
+          err.data = data;
+          throw err;
+        }
+
+        return data;
+      }
+
+      // -----------------------------
+      // Rendering
+      // -----------------------------
+      function clearUI() {
+        kpiActive.textContent = "—";
+        kpiActiveSub.textContent = "—";
+        kpiMerged.textContent = "—";
+        kpiMergedSub.textContent = "—";
+        kpiSeats.textContent = "—";
+        kpiSeatsSub.textContent = "—";
+        kpiTagged.textContent = "—";
+        kpiTaggedSub.textContent = "—";
+        rangePill.textContent = "—";
+        usersPill.textContent = "Showing —";
+        usersTbody.innerHTML = "";
+
+        if (state.charts.activity) state.charts.activity.destroy();
+        if (state.charts.breakdown) state.charts.breakdown.destroy();
+        state.charts.activity = null;
+        state.charts.breakdown = null;
+      }
+
+      function setTeamOptions(teams) {
+        const current = teamSelect.value || "all";
+        const options = [`<option value="all">All teams</option>`]
+          .concat((teams || []).map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`));
+        teamSelect.innerHTML = options.join("");
+        // restore if possible
+        const exists = Array.from(teamSelect.options).some(o => o.value === current);
+        teamSelect.value = exists ? current : "all";
+      }
+
+      function computeKpis(ds) {
+        const seats = Number(ds.seats || 0);
+        const mergedTotal = (ds.users || []).reduce((a, u) => a + Number(u.mergedPRs || 0), 0);
+        const active = (ds.users || []).filter(u => Number(u.mergedPRs || 0) >= 1).length;
+        const activePct = seats > 0 ? (active / seats) * 100 : 0;
+
+        const taggedMerged = Number(ds.taggedMergedTotal || 0);
+        const taggedPct = mergedTotal > 0 ? (taggedMerged / mergedTotal) * 100 : 0;
+
+        return { seats, mergedTotal, active, activePct, taggedMerged, taggedPct };
+      }
+
+      function renderKpis(ds) {
+        const { seats, mergedTotal, active, activePct, taggedMerged, taggedPct } = computeKpis(ds);
+
+        kpiActive.textContent = `${active} (${fmtPct(activePct)})`;
+        kpiActiveSub.textContent = `Active of ${seats} engineers`;
+
+        kpiMerged.textContent = String(mergedTotal);
+        kpiMergedSub.textContent = `Total merged PRs in period`;
+
+        kpiSeats.textContent = String(seats);
+        kpiSeatsSub.textContent = `Provisioned engineers in tenant`;
+
+        kpiTagged.textContent = `${taggedMerged} (${fmtPct(taggedPct)})`;
+        kpiTaggedSub.textContent = `Merged PR tag coverage`;
+      }
+
+      function renderRange(ds) {
+        const r = ds.range;
+        if (r?.start && r?.end) {
+          rangePill.textContent = `${r.start.slice(0,10)} → ${r.end.slice(0,10)}`;
+          return;
+        }
+        // fallback
+        const periodDays = Number(ds.periodDays || periodSelect.value || 14);
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - periodDays);
+        rangePill.textContent = `${start.toISOString().slice(0,10)} → ${end.toISOString().slice(0,10)}`;
+      }
+
+      function renderUsersTable(ds) {
+        const q = (searchInput.value || "").trim().toLowerCase();
+        let users = (ds.users || []).slice();
+
+        if (q) {
+          users = users.filter(u => {
+            const s = `${u.name || ""} ${u.email || ""}`.toLowerCase();
+            return s.includes(q);
+          });
+        }
+
+        usersPill.textContent = `Showing ${users.length}`;
+
+        usersTbody.innerHTML = users.map(u => {
+          const name = escapeHtml(u.name || u.email || u.id || "—");
+          const email = escapeHtml(u.email || "");
+          const team = escapeHtml(u.team || "Unknown");
+          const merged = Number(u.mergedPRs || 0);
+          const topType = escapeHtml(u.topType || "—");
+          const last = fmtIso(u.lastActivity);
+          const status = merged >= 1 ? "Active" : "Inactive";
+
+          return `
+            <tr>
+              <td>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <div style="font-weight:700;">${name}</div>
+                  <div class="muted" style="font-size:11px;">${email || "—"}</div>
+                </div>
+              </td>
+              <td>${team}</td>
+              <td style="font-weight:700;">${merged}</td>
+              <td>${topType}</td>
+              <td class="muted">${escapeHtml(last)}</td>
+              <td>${statusBadge(status)}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function renderActivityChart(ds) {
+        const labels = (ds.series || []).map(x => x.date);
+        const merged = (ds.series || []).map(x => Number(x.mergedPRs || 0));
+        const active = (ds.series || []).map(x => Number(x.activeEngineers || 0));
+
+        const ctx = document.getElementById("activity-chart");
+        if (state.charts.activity) state.charts.activity.destroy();
+
+        state.charts.activity = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "Merged PRs", data: merged, tension: 0.35 },
+              { label: "Active engineers", data: active, tension: 0.35 },
+            ],
           },
-          interaction: { mode: "index", intersect: false },
-          scales: {
-            x: { ticks: { color: "rgba(234,240,255,.55)", maxRotation: 0, autoSkip: true }, grid: { color: "rgba(255,255,255,.06)" } },
-            y: { ticks: { color: "rgba(234,240,255,.55)" }, grid: { color: "rgba(255,255,255,.06)" } }
-          }
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: "rgba(229,231,235,0.85)" } },
+              tooltip: { mode: "index", intersect: false },
+            },
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: {
+                ticks: { color: "rgba(148,163,184,0.9)", maxRotation: 0, autoSkip: true },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+              y: {
+                ticks: { color: "rgba(148,163,184,0.9)" },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+            },
+          },
+        });
+      }
+
+      function renderBreakdownChart(ds) {
+        const isTeam = state.breakdownMode === "team";
+        const map = isTeam ? (ds.teamMerged || {}) : (ds.typeMerged || {});
+        const labels = Object.keys(map);
+        const values = labels.map(k => Number(map[k] || 0));
+
+        if (isTeam) {
+          breakdownTitle.textContent = "Team breakdown";
+          breakdownSubtitle.textContent = "Share of merged PRs.";
+          breakdownNote.textContent = "Teams come from your directory mapping (or stored user team field).";
+        } else {
+          breakdownTitle.textContent = "Work type breakdown";
+          breakdownSubtitle.textContent = "Share of merged PRs by PR tag.";
+          breakdownNote.textContent = "Work types come from PR tags (e.g. Feature, Bug fix, Refactor).";
         }
+
+        const ctx = document.getElementById("breakdown-chart");
+        if (state.charts.breakdown) state.charts.breakdown.destroy();
+
+        state.charts.breakdown = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels,
+            datasets: [{ label: "Merged PRs", data: values }],
+          },
+          options: {
+            plugins: {
+              legend: { position: "bottom", labels: { color: "rgba(229,231,235,0.85)" } },
+            },
+          },
+        });
+      }
+
+      function setBreakdownMode(mode) {
+        state.breakdownMode = mode;
+        breakdownTeamBtn.classList.toggle("active", mode === "team");
+        breakdownTypeBtn.classList.toggle("active", mode === "type");
+        if (state.dataset) renderBreakdownChart(state.dataset);
+      }
+
+      // -----------------------------
+      // CSV export
+      // -----------------------------
+      function toCSV(rows) {
+        const esc = (v) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+        return rows.map(r => r.map(esc).join(",")).join("\n");
+      }
+
+      function download(filename, text) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      function exportCsv(ds) {
+        const q = (searchInput.value || "").trim().toLowerCase();
+        let users = (ds.users || []).slice();
+        if (q) {
+          users = users.filter(u => `${u.name || ""} ${u.email || ""}`.toLowerCase().includes(q));
+        }
+
+        const rows = [
+          ["name", "email", "team", "mergedPRs", "topWorkType", "lastActivityISO", "status"],
+          ...users.map(u => [
+            u.name || u.email || u.id || "",
+            u.email || "",
+            u.team || "",
+            Number(u.mergedPRs || 0),
+            u.topType || "",
+            u.lastActivity || "",
+            (Number(u.mergedPRs || 0) >= 1) ? "Active" : "Inactive",
+          ]),
+        ];
+
+        const periodDays = Number(ds.periodDays || periodSelect.value || 14);
+        download(`rapidreviewer-admin-metrics-${periodDays}d.csv`, toCSV(rows));
+      }
+
+      // -----------------------------
+      // Load & render
+      // -----------------------------
+      async function loadAndRender() {
+        setError("");
+
+        const token = getToken();
+        if (!token) {
+          headerPill.textContent = "Not signed in";
+          signInBtn.style.display = "inline-block";
+          signOutBtn.style.display = "none";
+          setError("No token found. Please sign in to view admin metrics.");
+          clearUI();
+          return;
+        }
+
+        headerPill.textContent = "Logged in via Cognito · Admin dashboard";
+        signInBtn.style.display = "none";
+        signOutBtn.style.display = "inline-block";
+
+        const periodDays = Number(periodSelect.value || 14);
+        const team = teamSelect.value || "all";
+
+        try {
+          headerPill.textContent = "Loading metrics…";
+          const ds = await fetchAdminMetrics({ periodDays, team });
+
+          state.dataset = ds;
+
+          // Populate team selector from backend response
+          setTeamOptions(ds.teams || []);
+
+          // Render
+          renderRange(ds);
+          renderKpis(ds);
+          renderActivityChart(ds);
+          renderBreakdownChart(ds);
+          renderUsersTable(ds);
+
+          headerPill.textContent = "Logged in via Cognito · Admin dashboard";
+        } catch (e) {
+          console.error("Admin metrics error:", e);
+
+          if (e.message === "missing_token") {
+            setError("No token found. Please sign in.");
+          } else if (e.status === 401) {
+            setError("Unauthorized (401). Your session may be expired. Please sign in again.");
+          } else if (e.status === 403) {
+            setError("Forbidden (403). This account does not have admin access for this tenant.");
+          } else {
+            setError(`Failed to load admin metrics. ${e.message || "Unknown error"}`);
+          }
+
+          headerPill.textContent = "Error loading metrics";
+          clearUI();
+        }
+      }
+
+      // -----------------------------
+      // Events
+      // -----------------------------
+      breakdownTeamBtn.addEventListener("click", () => setBreakdownMode("team"));
+      breakdownTypeBtn.addEventListener("click", () => setBreakdownMode("type"));
+
+      refreshBtn.addEventListener("click", () => loadAndRender());
+
+      periodSelect.addEventListener("change", () => loadAndRender());
+      teamSelect.addEventListener("change", () => loadAndRender());
+
+      searchInput.addEventListener("input", () => {
+        if (!state.dataset) return;
+        renderUsersTable(state.dataset);
       });
 
-      renderBreakdownChart(ds);
-    }
-
-    function renderBreakdownChart(ds){
-      const isTeam = breakdownMode === "team";
-
-      const labels = isTeam ? Object.keys(ds.teamMerged) : Object.keys(ds.typeMerged);
-      const values = isTeam ? labels.map(k => ds.teamMerged[k]) : labels.map(k => ds.typeMerged[k]);
-
-      els.breakdownTitle.textContent = isTeam ? "Team breakdown" : "Work type breakdown";
-      els.breakdownHint.textContent = "Share of merged PRs";
-      els.breakdownNote.textContent = isTeam
-        ? "In the real version, this should be backed by your org/team mapping (GitHub teams or internal directory)."
-        : "Work type comes from user-tagged PR categorisation (e.g. feature, bug fix, refactor).";
-
-      if (state.charts.breakdown) state.charts.breakdown.destroy();
-      state.charts.breakdown = new Chart(els.chartBreakdown, {
-        type: "doughnut",
-        data: { labels, datasets: [{ label: "Merged PRs", data: values }] },
-        options: {
-          plugins: {
-            legend: { position: "bottom", labels: { color: "rgba(234,240,255,.75)" } }
-          }
-        }
+      exportBtn.addEventListener("click", () => {
+        if (!state.dataset) return;
+        exportCsv(state.dataset);
+        setSuccess("Exported CSV.");
       });
-    }
 
-    function setBreakdownMode(mode){
-      breakdownMode = mode;
-      els.btnBreakdownTeam.classList.toggle("active", mode === "team");
-      els.btnBreakdownType.classList.toggle("active", mode === "type");
-      els.btnBreakdownTeam.setAttribute("aria-selected", mode === "team" ? "true" : "false");
-      els.btnBreakdownType.setAttribute("aria-selected", mode === "type" ? "true" : "false");
-      if (state.dataset) renderBreakdownChart(state.dataset);
-    }
+      signInBtn.addEventListener("click", signIn);
+      signOutBtn.addEventListener("click", signOut);
 
-    els.btnBreakdownTeam.addEventListener("click", () => setBreakdownMode("team"));
-    els.btnBreakdownType.addEventListener("click", () => setBreakdownMode("type"));
-
-    function renderAll(){
-      const session = getSession();
-      const company = session?.company || "Acme Ltd";
-      const { periodDays, team, q } = getFilters();
-
-      els.periodPill.textContent = `Period: last ${periodDays} days`;
-
-      state.dataset = getDummyMetrics({ company, periodDays });
-      setTeamOptions(state.dataset);
-
-      // KPIs should respect TEAM filter, but NOT search filter (search is just for the table)
-      const kpis = computeKPIs(state.dataset, team);
-      renderKPIs(kpis, periodDays);
-
-      const baseUsers = getBaseUsers(state.dataset, team);
-      const displayUsers = getDisplayUsers(baseUsers, q);
-      renderTable(displayUsers);
-
-      renderCharts(state.dataset);
-    }
-
-    // CSV export
-    function toCSV(rows){
-      const esc = (v) => `"${String(v ?? "").replaceAll('"','""')}"`;
-      return rows.map(r => r.map(esc).join(",")).join("\n");
-    }
-    function download(filename, text){
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([text], {type:"text/csv;charset=utf-8"}));
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-
-    els.btnExport.addEventListener("click", () => {
-      const { team, q, periodDays } = getFilters();
-      const ds = state.dataset;
-      const baseUsers = getBaseUsers(ds, team);
-      const users = getDisplayUsers(baseUsers, q);
-
-      const header = ["name","email","team","mergedPRs","topWorkType","lastActivityISO","status"];
-      const rows = [
-        header,
-        ...users.map(u => [
-          u.name,
-          u.email,
-          u.team,
-          u.mergedPRs,
-          u.topType,
-          new Date(u.lastActivity).toISOString(),
-          u.status
-        ])
-      ];
-
-      const csv = toCSV(rows);
-      const company = (getSession()?.company || "company").toLowerCase().replace(/\s+/g,"-");
-      download(`rapidreviewer-admin-${company}-${periodDays}d.csv`, csv);
-    });
-
-    // Filter events
-    els.periodSelect.addEventListener("change", renderAll);
-    els.teamSelect.addEventListener("change", renderAll);
-    els.searchInput.addEventListener("input", () => {
-      const { team, q } = getFilters();
-      const ds = state.dataset;
-      const baseUsers = getBaseUsers(ds, team);
-      const displayUsers = getDisplayUsers(baseUsers, q);
-      renderTable(displayUsers);
-    });
-    els.btnRefresh.addEventListener("click", renderAll);
-
-    // Init
-    applySessionToUI();
-    renderAll();
-  </script>
-</body>
+      // -----------------------------
+      // Init
+      // -----------------------------
+      // Note: your post-auth.html already persists id_token into localStorage as "idToken".
+      // So visiting admin.html after auth should just work.
+      loadAndRender();
+    </script>
+  </body>
 </html>
